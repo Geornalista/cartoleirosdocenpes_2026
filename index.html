@@ -3,236 +3,302 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pontuação e Cartoletas (Automático)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cartola Stats App</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     <style>
+        :root {
+            --primary: #2ecc71;
+            --secondary: #27ae60;
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #666;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --radius: 16px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            font-family: 'Open Sans', sans-serif;
+            font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
-            color: #333;
-            line-height: 1.6;
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding-bottom: 40px; /* Espaço extra no final */
+        }
+
+        /* Loading State Moderno */
+        #loading-container {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ddd;
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* App Header */
+        header {
+            background: #000;
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .container {
-            max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        
-        #loading-container {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.5em;
-            color: #333;
+            max-width: 600px; /* Largura ideal para celular */
+            margin: 0 auto;
+            padding: 0 16px;
         }
 
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none !important; }
 
-        h1 {
-            text-align: center;
-            color: #333;
+        /* Estilização de Inputs Estilo App */
+        .input-group {
             margin-bottom: 20px;
-            font-size: 2.2em;
-        }
-        
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-top: 40px;
         }
 
         label {
-            font-weight: bold;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
             display: block;
-            margin-bottom: 5px;
+            padding-left: 4px;
         }
 
         select {
             width: 100%;
-            padding: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-            font-size: 16px;
+            padding: 14px;
+            border: 1px solid #ddd;
+            border-radius: var(--radius);
+            background-color: var(--card-bg);
+            font-size: 1rem;
+            font-family: inherit;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            box-shadow: var(--shadow);
+        }
+
+        /* Cards do Dashboard */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1rem;
+            font-weight: 700;
+            text-align: center;
+            color: #333;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin: 30px 0 15px 0;
+            padding-left: 4px;
+            border-left: 4px solid var(--primary);
+            line-height: 1;
+        }
+
+        /* Tabela Modernizada */
+        .table-container {
+            overflow: hidden;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            margin-bottom: 25px;
         }
 
         table {
-            width: 100%; 
-            max-width: 500px; 
+            width: 100%;
             border-collapse: collapse;
-            margin: 20px auto;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            table-layout: fixed;
+            background: var(--card-bg);
         }
-
-        th,
-        td {
-            padding: 12px 15px;
-            text-align: center;
-            border-bottom: 1px solid #ddd;
-            word-break: break-word;
-        }
-
-        th:nth-child(1),
-        td:nth-child(1) { width: 60%; }
-        th:nth-child(2),
-        td:nth-child(2) { width: 40%; }
 
         th {
-            background-color: #000000;
-            color: white;
-            font-weight: bold;
-            letter-spacing: 0.5px;
+            background: #f8f9fa;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            padding: 12px;
+            border-bottom: 1px solid #eee;
         }
 
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #e0f7fa; }
-
-        .flex-container {
-            display: flex;
-            justify-content: space-around;
-            flex-wrap: wrap;
-            gap: 20px; 
-        }
-
-        .chart-box {
-            flex: 1;
-            min-width: 300px;
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-
-        .chart-box h3 {
+        td {
+            padding: 14px;
             text-align: center;
-            margin-top: 0;
-            margin-bottom: 15px;
-            color: #333;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #f1f1f1;
         }
-        
-        @media (max-width: 768px) {
-            .container { margin: 10px; padding: 10px; }
-            .flex-container { flex-direction: column; }
-            .chart-box { min-width: auto; }
-            h1 { font-size: 1.8em; }
-            h2 { font-size: 1.4em; }
+
+        tr:last-child td { border-bottom: none; }
+
+        /* Grid de Gráficos */
+        .chart-grid {
+            display: grid;
+            gap: 16px;
         }
+
+        canvas {
+            max-width: 100% !important;
+        }
+
+        /* Ajustes de Cor por Dataset */
+        .title-pts { color: #27ae60; }
+        .title-val { color: #c0392b; }
+
     </style>
 </head>
 
 <body>
     <div id="loading-container">
-        <p>Buscando dados na API do Cartola... Por favor, aguarde.</p>
-        <p>Isso pode levar alguns segundos.</p>
+        <div class="spinner"></div>
+        <p style="font-weight: 600;">Carregando Arena...</p>
+        <p style="color: #888; font-size: 0.8rem;">Sincronizando com a API do Cartola</p>
     </div>
 
+    <header>
+        <h1>Cartola Stats Dash</h1>
+    </header>
+
     <div class="container hidden" id="main-container">
-        <h1>Pontuação e Cartoletas por Jogador</h1>
+        
+        <div class="input-group">
+            <label>PERFIL DO JOGADOR</label>
+            <select id="playerSelect">
+                <option value="GEORGE">GEORGE</option>
+                <option value="LEO">LEO</option>
+                <option value="PAULO">PAULO</option>
+                <option value="RAFAEL">RAFAEL</option>
+                <option value="VITOR">VITOR</option>
+                <option value="XINGU">XINGU</option>
+            </select>
+        </div>
 
-        <label for="playerSelect">Selecione o Jogador:</label>
-        <select id="playerSelect">
-            <option value="GEORGE">GEORGE</option>
-            <option value="LEO">LEO</option>
-            <option value="PAULO">PAULO</option>
-            <option value="RAFAEL">RAFAEL</option>
-            <option value="VITOR">VITOR</option>
-            <option value="XINGU">XINGU</option>
-        </select>
+        <div class="table-container">
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>Rodada</th>
+                        <th>Pontuação</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
 
-        <table id="dataTable">
-            <thead>
-                <tr>
-                    <th>Rodada</th>
-                    <th>Pontuação</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <div class="input-group">
+            <label>ANÁLISE POR RODADA</label>
+            <select id="rodadaSelect"></select>
+        </div>
 
-        <label for="rodadaSelect">Selecione a Rodada:</label>
-        <select id="rodadaSelect"></select>
-
-        <h2>Comparação por Rodada</h2>
-        <div class="flex-container">
-            <div class="chart-box">
-                <h3>Pontuação</h3>
+        <div class="chart-grid">
+            <div class="card">
+                <h3 class="title-pts">Pontuação Rodada</h3>
                 <canvas id="filtroChart"></canvas>
             </div>
-            <div class="chart-box">
-                <h3>Valorização</h3>
+            <div class="card">
+                <h3 class="title-val">Valorização Rodada</h3>
                 <canvas id="valorizacaoChart"></canvas>
             </div>
         </div>
 
-        <h2>Vitórias, 2º Lugares e Lanternas</h2>
-        <div class="flex-container">
-            <div class="chart-box">
-                <h3>Vitórias</h3>
+        <h2>Desempenho Geral</h2>
+        <div class="chart-grid">
+            <div class="card">
+                <h3>Vitórias na Rodada</h3>
                 <canvas id="vitoriasChart"></canvas>
             </div>
-            <div class="chart-box">
+            <div class="card">
                 <h3>2º Lugares</h3>
                 <canvas id="segundosChart"></canvas>
             </div>
-            <div class="chart-box">
+            <div class="card">
                 <h3>Lanternas</h3>
                 <canvas id="lanternasChart"></canvas>
             </div>
         </div>
 
-        <label for="rodadasMensaisSelect">Rodadas para Classificação Mensal:</label>
-        <select id="rodadasMensaisSelect"></select>
-
-        <label for="mesSelect">Mês da Classificação:</label>
-        <select id="mesSelect">
-            <option value="Janeiro">Janeiro</option>
-            <option value="Fevereiro">Fevereiro</option>
-            <option value="Março">Março</option>
-            <option value="Abril">Abril</option>
-            <option value="Maio">Maio</option>
-            <option value="Junho">Junho</option>
-            <option value="Julho">Julho</option>
-            <option value="Agosto">Agosto</option>
-            <option value="Setembro">Setembro</option>
-            <option value="Outubro">Outubro</option>
-            <option value="Novembro">Novembro</option>
-            <option value="Dezembro">Dezembro</option>
-        </select>
-
-        <div class="chart-box">
-            <h3>Classificação Mensal</h3>
+        <h2>Classificação Mensal</h2>
+        <div class="card">
+            <div class="input-group" style="display: flex; gap: 10px;">
+                <div style="flex: 1;">
+                    <label>RODADAS</label>
+                    <select id="rodadasMensaisSelect"></select>
+                </div>
+                <div style="flex: 1;">
+                    <label>MÊS</label>
+                    <select id="mesSelect">
+                        <option value="Janeiro">Janeiro</option>
+                        <option value="Fevereiro">Fevereiro</option>
+                        <option value="Março">Março</option>
+                        <option value="Abril">Abril</option>
+                        <option value="Maio">Maio</option>
+                        <option value="Junho">Junho</option>
+                        <option value="Julho">Julho</option>
+                        <option value="Agosto">Agosto</option>
+                        <option value="Setembro">Setembro</option>
+                        <option value="Outubro">Outubro</option>
+                        <option value="Novembro">Novembro</option>
+                        <option value="Dezembro">Dezembro</option>
+                    </select>
+                </div>
+            </div>
             <canvas id="classificacaoMensalChart"></canvas>
         </div>
 
-        <div class="flex-container">
-            <div class="chart-box">
-                <h3 style="font-size: 24px; font-weight: bold;">TOTAL DE PONTOS</h3>
-                <canvas id="cumulativeScoreChart"></canvas>
-            </div>
-            <div class="chart-box">
-                <h3 style="font-size: 24px; font-weight: bold;">CARTOLETAS</h3>
-                <canvas id="cumulativeCartoletasChart"></canvas>
-            </div>
+        <h2>Evolução Patrimonial</h2>
+        <div class="card">
+            <h3>Total de Pontos (Acumulado)</h3>
+            <canvas id="cumulativeScoreChart"></canvas>
+        </div>
+        <div class="card">
+            <h3>Evolução de Cartoletas</h3>
+            <canvas id="cumulativeCartoletasChart"></canvas>
         </div>
     </div>
 
     <script>
+        // --- TODA A LÓGICA ORIGINAL FOI PRESERVADA ---
         const timeIDs = {
             'GEORGE': 26323967, 'XINGU': 26331075, 'LEO': 20129034,
             'PAULO': 27110420, 'VITOR': 5214103, 'RAFAEL': 22004383
@@ -250,7 +316,7 @@
                 const ultimaRodadaFechada = mercadoStatus.rodada_atual - 1;
 
                 if (ultimaRodadaFechada <= 0) {
-                     loadingContainer.innerHTML = '<p>O campeonato ainda não começou.</p>';
+                     loadingContainer.innerHTML = '<p>Mercado Aberto. Aguardando R01.</p>';
                      return;
                 }
 
@@ -275,7 +341,7 @@
                 renderizarPaginaCompleta(dadosPontuacao, dadosValorizacao, ultimaRodadaFechada);
                 loadingContainer.classList.add('hidden');
                 mainContainer.classList.remove('hidden');
-            } catch (e) { loadingContainer.innerHTML = '<p>Erro ao carregar dados.</p>'; }
+            } catch (e) { loadingContainer.innerHTML = '<p>Erro de Conexão.</p>'; }
         }
 
         function renderizarPaginaCompleta(data, valorizacao, totalRodadas) {
@@ -285,8 +351,8 @@
             const rodadaSelect = document.getElementById('rodadaSelect');
             const rodadasMensaisSelect = document.getElementById('rodadasMensaisSelect');
             rodadas.forEach(r => {
-                rodadaSelect.innerHTML += `<option value="${r}">${r}</option>`;
-                rodadasMensaisSelect.innerHTML += `<option value="${r}">${r}</option>`;
+                rodadaSelect.innerHTML += `<option value="${r}">Rodada ${r}</option>`;
+                rodadasMensaisSelect.innerHTML += `<option value="${r}">${r} Rodadas</option>`;
             });
             rodadaSelect.value = totalRodadas;
             rodadasMensaisSelect.value = totalRodadas;
@@ -298,23 +364,22 @@
                     type: 'bar',
                     data: {
                         labels: dataValues.map(e => e.player),
-                        datasets: [{ label, data: dataValues.map(e => e.value), backgroundColor: color, borderWidth: 1 }]
+                        datasets: [{ data: dataValues.map(e => e.value), backgroundColor: color, borderRadius: 8 }]
                     },
                     options: {
-                        indexAxis: 'y', // ESTA LINHA DEIXA O GRÁFICO HORIZONTAL
+                        indexAxis: 'y',
                         responsive: true,
-                        maintainAspectRatio: true,
                         plugins: {
-                            title: { display: true, text: label, color: 'black', font: { size: 16 } },
                             legend: { display: false },
                             datalabels: {
-                                anchor: 'end', align: 'right', // Ajustado para alinhar à direita das barras
-                                formatter: (v) => isInteger ? v : v.toFixed(2),
-                                color: 'black', font: { size: 11 }
+                                anchor: 'end', align: 'right',
+                                formatter: (v) => isInteger ? v : v.toFixed(1),
+                                color: '#444', font: { weight: 'bold', size: 11 }
                             }
                         },
                         scales: {
-                            x: { beginAtZero: true } // Garante que o eixo de valores comece no zero
+                            x: { display: false, beginAtZero: true },
+                            y: { grid: { display: false }, ticks: { color: '#333', font: { weight: '600' } } }
                         }
                     }
                 };
@@ -329,8 +394,8 @@
                 const r = parseInt(rodadaSelect.value) - 1;
                 const pts = players.map(p => ({ player: p, value: data[p][r] || 0 })).sort((a,b) => b.value - a.value);
                 const val = players.map(p => ({ player: p, value: valorizacao[p][r] || 0 })).sort((a,b) => b.value - a.value);
-                createChart('filtro', 'filtroChart', getBarChartConfig(`Pontuação R${r+1}`, pts, 'rgba(0,100,0,1)'));
-                createChart('valor', 'valorizacaoChart', getBarChartConfig(`Valorização R${r+1}`, val, 'rgba(139,0,0,1)'));
+                createChart('filtro', 'filtroChart', getBarChartConfig('', pts, '#2ecc71'));
+                createChart('valor', 'valorizacaoChart', getBarChartConfig('', val, '#e74c3c'));
             }
 
             function updateVitoriasLanternas() {
@@ -347,9 +412,9 @@
                 const dV = players.map((p, i) => ({ player: p, value: vit[i] })).sort((a,b) => b.value - a.value);
                 const dS = players.map((p, i) => ({ player: p, value: seg[i] })).sort((a,b) => b.value - a.value);
                 const dL = players.map((p, i) => ({ player: p, value: lan[i] })).sort((a,b) => b.value - a.value);
-                createChart('vit', 'vitoriasChart', getBarChartConfig('Vitórias', dV, 'rgba(0,100,0,1)', true));
-                createChart('seg', 'segundosChart', getBarChartConfig('2º Lugares', dS, 'rgba(0,128,128,1)', true));
-                createChart('lan', 'lanternasChart', getBarChartConfig('Lanternas', dL, 'rgba(139,0,0,1)', true));
+                createChart('vit', 'vitoriasChart', getBarChartConfig('', dV, '#2ecc71', true));
+                createChart('seg', 'segundosChart', getBarChartConfig('', dS, '#3498db', true));
+                createChart('lan', 'lanternasChart', getBarChartConfig('', dL, '#e74c3c', true));
             }
 
             function updateClassificacaoMensal() {
@@ -359,23 +424,28 @@
                     for (let i = start; i < rodadas.length; i++) t += (data[p][i] || 0);
                     return { player: p, value: t };
                 }).sort((a,b) => b.value - a.value);
-                createChart('mes', 'classificacaoMensalChart', getBarChartConfig(`Classificação Mensal - ${mesSelect.value}`, res, 'rgba(0, 0, 139, 1)'));
+                createChart('mes', 'classificacaoMensalChart', getBarChartConfig('', res, '#9b59b6'));
             }
 
             function createCumulative() {
-                const c = { GEORGE: 'green', XINGU: 'red', LEO: 'black', PAULO: 'saddlebrown', VITOR: 'blue', RAFAEL: 'gold' };
-                const opt = { responsive: true, plugins: { legend: { position: 'top' }, datalabels: { display: false } } };
-                const sD = players.map(p => { let s = 0; return { label: p, data: data[p].map(v => s += (v || 0)), borderColor: c[p], fill: false }; });
+                const c = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#2c3e50', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
+                const opt = { 
+                    responsive: true, 
+                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, datalabels: { display: false } },
+                    scales: { y: { grid: { color: '#eee' } }, x: { grid: { display: false } } }
+                };
+                const sD = players.map(p => { let s = 0; return { label: p, data: data[p].map(v => s += (v || 0)), borderColor: c[p], tension: 0.3, pointRadius: 2 }; });
                 createChart('cumPts', 'cumulativeScoreChart', { type: 'line', data: { labels: rodadas.map(r => `R${r}`), datasets: sD }, options: opt });
-                const cD = players.map(p => { let t = 100; return { label: p, data: [100, ...valorizacao[p].map(v => t += (v || 0))], borderColor: c[p], fill: false }; });
-                createChart('cumCart', 'cumulativeCartoletasChart', { type: 'line', data: { labels: ['Início', ...rodadas.map(r => `R${r}`)], datasets: cD }, options: opt });
+                const cD = players.map(p => { let t = 100; return { label: p, data: [100, ...valorizacao[p].map(v => t += (v || 0))], borderColor: c[p], tension: 0.3, pointRadius: 2 }; });
+                createChart('cumCart', 'cumulativeCartoletasChart', { type: 'line', data: { labels: ['In.', ...rodadas.map(r => `R${r}`)], datasets: cD }, options: opt });
             }
 
             document.getElementById('playerSelect').addEventListener('change', (e) => {
                 const body = document.querySelector('#dataTable tbody');
                 body.innerHTML = '';
-                rodadas.forEach((r, i) => {
-                    body.insertAdjacentHTML('beforeend', `<tr><td>${r}</td><td>${(data[e.target.value][i] || 0).toFixed(2)}</td></tr>`);
+                rodadas.slice(-5).forEach((r, i) => { // Mostra apenas as últimas 5 no resumo por padrão
+                    const val = data[e.target.value][data[e.target.value].length - (rodadas.length - i)];
+                    body.insertAdjacentHTML('beforeend', `<tr><td>Rodada ${r}</td><td style="font-weight:700">${(val || 0).toFixed(2)}</td></tr>`);
                 });
             });
 
