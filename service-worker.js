@@ -1,17 +1,21 @@
-const CACHE_NAME = 'Cartoleiros';
-
-const ASSETS = [
+const CACHE_NAME = 'Cartola-v2';
+const assets = [
   './',
   './index.html',
   './manifest.json'
+  // Adicione aqui os caminhos para seus ícones se quiser que funcionem offline
 ];
 
+// Instalação: Salva os arquivos essenciais no cache
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(cache => {
+      return cache.addAll(assets);
+    })
   );
 });
 
+// Ativação: Limpa caches antigos (como o v1)
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
