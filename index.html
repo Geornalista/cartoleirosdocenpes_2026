@@ -5,74 +5,56 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Cartola Stats App</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
-
-    <link rel="manifest" href="manifest.json">
     
+    <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Cartola Stats">
-    
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    
     <meta name="theme-color" content="#27ae60">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
     
     <style>
         :root {
-            --primary: #2ecc71;
-            --secondary: #27ae60;
+            /* Tema Claro (Padrão) */
             --bg: #f0f2f5;
             --card-bg: #ffffff;
             --text-main: #1a1a1a;
             --text-muted: #666;
+            --border: #eeeeee;
+            --primary: #2ecc71;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            --radius: 16px;
+            --header-bg: #000000;
         }
 
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+        body.dark-mode {
+            /* Tema Escuro */
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --border: #333333;
+            --primary: #27ae60;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --header-bg: #1a1a1a;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 0;
             background-color: var(--bg);
             color: var(--text-main);
-            padding-bottom: 40px; /* Espaço extra no final */
+            transition: background-color 0.3s, color 0.3s;
+            padding-bottom: 40px;
         }
 
-        /* Loading State Moderno */
-        #loading-container {
-            position: fixed;
-            inset: 0;
-            background: var(--bg);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            text-align: center;
-        }
-
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #ddd;
-            border-top: 4px solid var(--primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 15px;
-        }
-
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-        /* App Header */
         header {
-            background: #000;
+            background: var(--header-bg);
             color: #fff;
             padding: 20px;
             text-align: center;
@@ -80,141 +62,86 @@
             border-bottom-right-radius: 24px;
             box-shadow: var(--shadow);
             margin-bottom: 20px;
+            position: relative;
         }
 
-        header h1 {
-            margin: 0;
+        header h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .theme-toggle {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px;
+            border-radius: 50%;
+            cursor: pointer;
             font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .container {
-            max-width: 600px; /* Largura ideal para celular */
-            margin: 0 auto;
-            padding: 0 16px;
-        }
-
+        .container { max-width: 600px; margin: 0 auto; padding: 0 16px; }
         .hidden { display: none !important; }
 
-        /* Estilização de Inputs Estilo App */
-        .input-group {
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
             margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
         }
 
-        label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-            display: block;
-            padding-left: 4px;
-        }
+        .input-group { margin-bottom: 20px; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: block; }
 
         select {
             width: 100%;
             padding: 14px;
-            border: 1px solid #ddd;
-            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            border-radius: 12px;
             background-color: var(--card-bg);
+            color: var(--text-main);
             font-size: 1rem;
-            font-family: inherit;
             appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 14px center;
-            box-shadow: var(--shadow);
         }
 
-        /* Cards do Dashboard */
-        .card {
-            background: var(--card-bg);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: var(--shadow);
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; }
+        th { background: var(--bg); color: var(--text-muted); font-size: 0.75rem; padding: 12px; text-transform: uppercase; }
+        td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border); }
+
+        h2 { font-size: 1.1rem; margin: 30px 0 15px 0; border-left: 4px solid var(--primary); padding-left: 10px; }
+
+        #loading-container {
+            position: fixed; inset: 0; background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
-
-        .card h3 {
-            margin: 0 0 15px 0;
-            font-size: 1rem;
-            font-weight: 700;
-            text-align: center;
-            color: #333;
-        }
-
-        h2 {
-            font-size: 1.1rem;
-            margin: 30px 0 15px 0;
-            padding-left: 4px;
-            border-left: 4px solid var(--primary);
-            line-height: 1;
-        }
-
-        /* Tabela Modernizada */
-        .table-container {
-            overflow: hidden;
-            border-radius: var(--radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 25px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--card-bg);
-        }
-
-        th {
-            background: #f8f9fa;
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            padding: 12px;
-            border-bottom: 1px solid #eee;
-        }
-
-        td {
-            padding: 14px;
-            text-align: center;
-            font-size: 0.95rem;
-            border-bottom: 1px solid #f1f1f1;
-        }
-
-        tr:last-child td { border-bottom: none; }
-
-        /* Grid de Gráficos */
-        .chart-grid {
-            display: grid;
-            gap: 16px;
-        }
-
-        canvas {
-            max-width: 100% !important;
-        }
-
-        /* Ajustes de Cor por Dataset */
-        .title-pts { color: #27ae60; }
-        .title-val { color: #c0392b; }
-
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 
 <body>
     <div id="loading-container">
         <div class="spinner"></div>
-        <p style="font-weight: 600;">Carregando Arena...</p>
-        <p style="color: #888; font-size: 0.8rem;">Sincronizando com a API do Cartola</p>
+        <p style="font-weight: 600;">Carregando estatísticas...</p>
     </div>
 
     <header>
         <h1>Cartola Stats Dash</h1>
+        <button id="themeToggle" class="theme-toggle">🌙</button>
     </header>
 
     <div class="container hidden" id="main-container">
-        
         <div class="input-group">
-            <label>PERFIL DO JOGADOR</label>
+            <label>JOGADOR</label>
             <select id="playerSelect">
                 <option value="GEORGE">GEORGE</option>
                 <option value="LEO">LEO</option>
@@ -225,261 +152,206 @@
             </select>
         </div>
 
-        <div class="table-container">
+        <div class="card" style="padding: 0;">
             <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th>Rodada</th>
-                        <th>Pontuação</th>
-                    </tr>
-                </thead>
+                <thead><tr><th>Rodada</th><th>Pontos</th></tr></thead>
                 <tbody></tbody>
             </table>
         </div>
 
         <div class="input-group">
-            <label>ANÁLISE POR RODADA</label>
+            <label>ANALISAR RODADA</label>
             <select id="rodadaSelect"></select>
         </div>
 
-        <div class="chart-grid">
-            <div class="card">
-                <h3 class="title-pts">Pontuação Rodada</h3>
-                <canvas id="filtroChart"></canvas>
-            </div>
-            <div class="card">
-                <h3 class="title-val">Valorização Rodada</h3>
-                <canvas id="valorizacaoChart"></canvas>
-            </div>
-        </div>
+        <div class="card"><h3>Pontuação</h3><canvas id="filtroChart"></canvas></div>
+        <div class="card"><h3>Valorização</h3><canvas id="valorizacaoChart"></canvas></div>
 
-        <h2>Desempenho Geral</h2>
-        <div class="chart-grid">
-            <div class="card">
-                <h3>Vitórias na Rodada</h3>
-                <canvas id="vitoriasChart"></canvas>
-            </div>
-            <div class="card">
-                <h3>2º Lugares</h3>
-                <canvas id="segundosChart"></canvas>
-            </div>
-            <div class="card">
-                <h3>Lanternas</h3>
-                <canvas id="lanternasChart"></canvas>
-            </div>
-        </div>
+        <h2>Frequência</h2>
+        <div class="card"><h3>Vitórias</h3><canvas id="vitoriasChart"></canvas></div>
+        <div class="card"><h3>2º Lugares</h3><canvas id="segundosChart"></canvas></div>
+        <div class="card"><h3>Lanternas</h3><canvas id="lanternasChart"></canvas></div>
 
         <h2>Classificação Mensal</h2>
         <div class="card">
-            <div class="input-group" style="display: flex; gap: 10px;">
-                <div style="flex: 1;">
-                    <label>RODADAS</label>
-                    <select id="rodadasMensaisSelect"></select>
-                </div>
-                <div style="flex: 1;">
-                    <label>MÊS</label>
-                    <select id="mesSelect">
-                        <option value="Janeiro">Janeiro</option>
-                        <option value="Fevereiro">Fevereiro</option>
-                        <option value="Março">Março</option>
-                        <option value="Abril">Abril</option>
-                        <option value="Maio">Maio</option>
-                        <option value="Junho">Junho</option>
-                        <option value="Julho">Julho</option>
-                        <option value="Agosto">Agosto</option>
-                        <option value="Setembro">Setembro</option>
-                        <option value="Outubro">Outubro</option>
-                        <option value="Novembro">Novembro</option>
-                        <option value="Dezembro">Dezembro</option>
-                    </select>
-                </div>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <select id="rodadasMensaisSelect" style="flex:1"></select>
+                <select id="mesSelect" style="flex:1">
+                    <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+                    <option>Abril</option><option>Maio</option><option>Junho</option>
+                    <option>Julho</option><option>Agosto</option><option>Setembro</option>
+                    <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+                </select>
             </div>
             <canvas id="classificacaoMensalChart"></canvas>
         </div>
 
-        <h2>Evolução Patrimonial</h2>
-        <div class="card">
-            <h3>Total de Pontos (Acumulado)</h3>
-            <canvas id="cumulativeScoreChart"></canvas>
-        </div>
-        <div class="card">
-            <h3>Evolução de Cartoletas</h3>
-            <canvas id="cumulativeCartoletasChart"></canvas>
-        </div>
+        <h2>Evolução</h2>
+        <div class="card"><h3>Pontos Acumulados</h3><canvas id="cumulativeScoreChart"></canvas></div>
+        <div class="card"><h3>Patrimônio (C$)</h3><canvas id="cumulativeCartoletasChart"></canvas></div>
     </div>
 
     <script>
-        // --- TODA A LÓGICA ORIGINAL FOI PRESERVADA ---
-        const timeIDs = {
-            'GEORGE': 26323967, 'XINGU': 26331075, 'LEO': 20129034,
-            'PAULO': 27110420, 'VITOR': 5214103, 'RAFAEL': 22004383
-        };
+        const timeIDs = { 'GEORGE': 26323967, 'XINGU': 26331075, 'LEO': 20129034, 'PAULO': 27110420, 'VITOR': 5214103, 'RAFAEL': 22004383 };
         const players = Object.keys(timeIDs);
+        let appData = { pontos: {}, valor: {} }, ultimaRodada = 0, charts = {};
 
-        async function iniciarAplicacao() {
-            const loadingContainer = document.getElementById('loading-container');
-            const mainContainer = document.getElementById('main-container');
-            const proxyUrl = 'https://corsproxy.io/?';
+        // Lógica de Tema
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
 
-            try {
-                const statusResponse = await fetch(`${proxyUrl}https://api.cartola.globo.com/mercado/status`);
-                const mercadoStatus = await statusResponse.json();
-                const ultimaRodadaFechada = mercadoStatus.rodada_atual - 1;
-
-                if (ultimaRodadaFechada <= 0) {
-                     loadingContainer.innerHTML = '<p>Mercado Aberto. Aguardando R01.</p>';
-                     return;
-                }
-
-                const dadosPontuacao = {};
-                const dadosValorizacao = {};
-                const patrimonioAnterior = {};
-                players.forEach(p => { dadosPontuacao[p] = []; dadosValorizacao[p] = []; patrimonioAnterior[p] = 100.00; });
-
-                for (let r = 1; r <= ultimaRodadaFechada; r++) {
-                    for (const p of players) {
-                        try {
-                            const resp = await fetch(`${proxyUrl}https://api.cartola.globo.com/time/id/${timeIDs[p]}/${r}`);
-                            const data = await resp.json();
-                            dadosPontuacao[p].push(data.pontos || 0);
-                            const pat = data.patrimonio || patrimonioAnterior[p];
-                            dadosValorizacao[p].push(pat - patrimonioAnterior[p]);
-                            patrimonioAnterior[p] = pat;
-                        } catch (e) { dadosPontuacao[p].push(0); dadosValorizacao[p].push(0); }
-                    }
-                }
-
-                renderizarPaginaCompleta(dadosPontuacao, dadosValorizacao, ultimaRodadaFechada);
-                loadingContainer.classList.add('hidden');
-                mainContainer.classList.remove('hidden');
-            } catch (e) { loadingContainer.innerHTML = '<p>Erro de Conexão.</p>'; }
-        }
-
-        function renderizarPaginaCompleta(data, valorizacao, totalRodadas) {
-            Chart.register(ChartDataLabels);
-            const rodadas = Array.from({ length: totalRodadas }, (_, i) => i + 1);
-
-            const rodadaSelect = document.getElementById('rodadaSelect');
-            const rodadasMensaisSelect = document.getElementById('rodadasMensaisSelect');
-            rodadas.forEach(r => {
-                rodadaSelect.innerHTML += `<option value="${r}">Rodada ${r}</option>`;
-                rodadasMensaisSelect.innerHTML += `<option value="${r}">${r} Rodadas</option>`;
-            });
-            rodadaSelect.value = totalRodadas;
-            rodadasMensaisSelect.value = totalRodadas;
-
-            let charts = {};
-
-            function getBarChartConfig(label, dataValues, color, isInteger = false) {
-                return {
-                    type: 'bar',
-                    data: {
-                        labels: dataValues.map(e => e.player),
-                        datasets: [{ data: dataValues.map(e => e.value), backgroundColor: color, borderRadius: 8 }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        plugins: {
-                            legend: { display: false },
-                            datalabels: {
-                                anchor: 'end', align: 'right',
-                                formatter: (v) => isInteger ? v : v.toFixed(1),
-                                color: '#444', font: { weight: 'bold', size: 11 }
-                            }
-                        },
-                        scales: {
-                            x: { display: false, beginAtZero: true },
-                            y: { grid: { display: false }, ticks: { color: '#333', font: { weight: '600' } } }
-                        }
-                    }
-                };
-            }
-
-            function createChart(key, ctxId, config) {
-                if (charts[key]) charts[key].destroy();
-                charts[key] = new Chart(document.getElementById(ctxId).getContext('2d'), config);
-            }
-
-            function updateRodadaCharts() {
-                const r = parseInt(rodadaSelect.value) - 1;
-                const pts = players.map(p => ({ player: p, value: data[p][r] || 0 })).sort((a,b) => b.value - a.value);
-                const val = players.map(p => ({ player: p, value: valorizacao[p][r] || 0 })).sort((a,b) => b.value - a.value);
-                createChart('filtro', 'filtroChart', getBarChartConfig('', pts, '#2ecc71'));
-                createChart('valor', 'valorizacaoChart', getBarChartConfig('', val, '#e74c3c'));
-            }
-
-            function updateVitoriasLanternas() {
-                const vit = players.map(() => 0), seg = players.map(() => 0), lan = players.map(() => 0);
-                for (let i = 0; i < rodadas.length; i++) {
-                    const rV = players.map((p, idx) => ({ idx, v: data[p][i] })).filter(x => x.v !== undefined).sort((a,b) => b.v - a.v);
-                    if (rV.length > 0) {
-                        const max = rV[0].v, min = rV[rV.length-1].v;
-                        rV.forEach(x => { if(x.v === max) vit[x.idx]++; if(x.v === min) lan[x.idx]++; });
-                        const sM = rV.find(x => x.v < max)?.v;
-                        if (sM !== undefined) rV.forEach(x => { if(x.v === sM) seg[x.idx]++; });
-                    }
-                }
-                const dV = players.map((p, i) => ({ player: p, value: vit[i] })).sort((a,b) => b.value - a.value);
-                const dS = players.map((p, i) => ({ player: p, value: seg[i] })).sort((a,b) => b.value - a.value);
-                const dL = players.map((p, i) => ({ player: p, value: lan[i] })).sort((a,b) => b.value - a.value);
-                createChart('vit', 'vitoriasChart', getBarChartConfig('', dV, '#2ecc71', true));
-                createChart('seg', 'segundosChart', getBarChartConfig('', dS, '#3498db', true));
-                createChart('lan', 'lanternasChart', getBarChartConfig('', dL, '#e74c3c', true));
-            }
-
-            function updateClassificacaoMensal() {
-                const n = parseInt(rodadasMensaisSelect.value);
-                const res = players.map(p => {
-                    let t = 0, start = Math.max(0, rodadas.length - n);
-                    for (let i = start; i < rodadas.length; i++) t += (data[p][i] || 0);
-                    return { player: p, value: t };
-                }).sort((a,b) => b.value - a.value);
-                createChart('mes', 'classificacaoMensalChart', getBarChartConfig('', res, '#9b59b6'));
-            }
-
-            function createCumulative() {
-                const c = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#2c3e50', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
-                const opt = { 
-                    responsive: true, 
-                    plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, datalabels: { display: false } },
-                    scales: { y: { grid: { color: '#eee' } }, x: { grid: { display: false } } }
-                };
-                const sD = players.map(p => { let s = 0; return { label: p, data: data[p].map(v => s += (v || 0)), borderColor: c[p], tension: 0.3, pointRadius: 2 }; });
-                createChart('cumPts', 'cumulativeScoreChart', { type: 'line', data: { labels: rodadas.map(r => `R${r}`), datasets: sD }, options: opt });
-                const cD = players.map(p => { let t = 100; return { label: p, data: [100, ...valorizacao[p].map(v => t += (v || 0))], borderColor: c[p], tension: 0.3, pointRadius: 2 }; });
-                createChart('cumCart', 'cumulativeCartoletasChart', { type: 'line', data: { labels: ['In.', ...rodadas.map(r => `R${r}`)], datasets: cD }, options: opt });
-            }
-
-            document.getElementById('playerSelect').addEventListener('change', (e) => {
-                const body = document.querySelector('#dataTable tbody');
-                body.innerHTML = '';
-                rodadas.slice(-5).forEach((r, i) => { // Mostra apenas as últimas 5 no resumo por padrão
-                    const val = data[e.target.value][data[e.target.value].length - (rodadas.length - i)];
-                    body.insertAdjacentHTML('beforeend', `<tr><td>Rodada ${r}</td><td style="font-weight:700">${(val || 0).toFixed(2)}</td></tr>`);
-                });
-            });
-
-            rodadaSelect.addEventListener('change', updateRodadaCharts);
-            mesSelect.addEventListener('change', updateClassificacaoMensal);
-            rodadasMensaisSelect.addEventListener('change', updateClassificacaoMensal);
-
-            document.getElementById('playerSelect').dispatchEvent(new Event('change'));
-            updateRodadaCharts(); updateVitoriasLanternas(); updateClassificacaoMensal(); createCumulative();
-        }
-
-        document.addEventListener('DOMContentLoaded', iniciarAplicacao);
-    </script>
-    
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./service-worker.js')
-            .then(reg => console.log('Service Worker registrado!', reg))
-            .catch(err => console.log('Erro ao registrar Service Worker', err));
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            themeToggle.innerText = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            renderizarGraficos(); // Redesenha para atualizar cores
         });
-      }
+
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+            themeToggle.innerText = '☀️';
+        }
+
+        async function iniciar() {
+            const proxy = 'https://corsproxy.io/?';
+            try {
+                const status = await (await fetch(`${proxy}https://api.cartola.globo.com/mercado/status`)).json();
+                ultimaRodada = status.rodada_atual - 1;
+                if (ultimaRodada <= 0) return document.getElementById('loading-container').innerHTML = "Aguardando R01.";
+
+                players.forEach(p => { appData.pontos[p] = []; appData.valor[p] = []; });
+                let patAnt = players.reduce((acc, p) => ({ ...acc, [p]: 100 }), {});
+
+                for (let r = 1; r <= ultimaRodada; r++) {
+                    await Promise.all(players.map(async p => {
+                        try {
+                            const d = await (await fetch(`${proxy}https://api.cartola.globo.com/time/id/${timeIDs[p]}/${r}`)).json();
+                            appData.pontos[p].push(d.pontos || 0);
+                            appData.valor[p].push((d.patrimonio || patAnt[p]) - patAnt[p]);
+                            patAnt[p] = d.patrimonio || patAnt[p];
+                        } catch (e) { appData.pontos[p].push(0); appData.valor[p].push(0); }
+                    }));
+                }
+                setupUI();
+            } catch (e) { console.error(e); }
+        }
+
+        function setupUI() {
+            const rSel = document.getElementById('rodadaSelect');
+            const rmSel = document.getElementById('rodadasMensaisSelect');
+            for (let i = 1; i <= ultimaRodada; i++) {
+                rSel.innerHTML += `<option value="${i}">Rodada ${i}</option>`;
+                rmSel.innerHTML += `<option value="${i}">${i} Rodadas</option>`;
+            }
+            rSel.value = rmSel.value = ultimaRodada;
+
+            document.getElementById('playerSelect').addEventListener('change', updateTable);
+            rSel.addEventListener('change', renderizarGraficos);
+            rmSel.addEventListener('change', renderizarGraficos);
+            document.getElementById('mesSelect').addEventListener('change', renderizarGraficos);
+
+            updateTable();
+            renderizarGraficos();
+            document.getElementById('loading-container').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('hidden');
+        }
+
+        function updateTable() {
+            const p = document.getElementById('playerSelect').value;
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = appData.pontos[p].map((pts, i) => `<tr><td>R${i+1}</td><td><b>${pts.toFixed(2)}</b></td></tr>`).reverse().join('');
+        }
+
+        function getChartColors() {
+            const isDark = body.classList.contains('dark-mode');
+            return {
+                text: isDark ? '#aaaaaa' : '#666666',
+                grid: isDark ? '#333333' : '#eeeeee',
+                mainText: isDark ? '#e0e0e0' : '#1a1a1a'
+            };
+        }
+
+        function getBarConfig(label, labels, data, color, isInt = false) {
+            const c = getChartColors();
+            return {
+                type: 'bar',
+                data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6 }] },
+                options: {
+                    indexAxis: 'y', responsive: true,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { anchor: 'end', align: 'right', color: c.mainText, font: { weight: 'bold' }, formatter: v => isInt ? v : v.toFixed(1) }
+                    },
+                    scales: {
+                        x: { display: false, beginAtZero: true },
+                        y: { grid: { display: false }, ticks: { color: c.text, font: { size: 11, weight: '600' } } }
+                    }
+                }
+            };
+        }
+
+        function renderizarGraficos() {
+            Chart.register(ChartDataLabels);
+            const rIdx = document.getElementById('rodadaSelect').value - 1;
+            const c = getChartColors();
+
+            // 1. Rodada
+            const pR = players.map(p => ({p, v: appData.pontos[p][rIdx]})).sort((a,b) => b.v - a.v);
+            updateChart('filtroChart', getBarConfig('', pR.map(x=>x.p), pR.map(x=>x.v), '#2ecc71'));
+            
+            const vR = players.map(p => ({p, v: appData.valor[p][rIdx]})).sort((a,b) => b.v - a.v);
+            updateChart('valorizacaoChart', getBarConfig('', vR.map(x=>x.p), vR.map(x=>x.v), '#e74c3c'));
+
+            // 2. Frequências (Vitórias, 2º, Lanterna)
+            let vit = {}, seg = {}, lan = {};
+            players.forEach(p => vit[p] = seg[p] = lan[p] = 0);
+            for (let i = 0; i < ultimaRodada; i++) {
+                let r = players.map(p => ({p, v: appData.pontos[p][i]})).sort((a,b)=>b.v-a.v);
+                vit[r[0].p]++;
+                lan[r[r.length-1].p]++;
+                const sVal = r.find(x => x.v < r[0].v)?.v;
+                if (sVal !== undefined) r.forEach(x => { if(x.v === sVal) seg[x.p]++; });
+            }
+            updateChart('vitoriasChart', getBarConfig('', players, players.map(p=>vit[p]), '#2ecc71', true));
+            updateChart('segundosChart', getBarConfig('', players, players.map(p=>seg[p]), '#3498db', true));
+            updateChart('lanternasChart', getBarConfig('', players, players.map(p=>lan[p]), '#e74c3c', true));
+
+            // 3. Acumulados (Line Charts)
+            const palmeirasColors = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#34495e', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
+            const lineOpt = { 
+                responsive: true, 
+                plugins: { legend: { labels: { color: c.text, boxWidth: 10 } }, datalabels: { display: false } },
+                scales: { 
+                    x: { ticks: { color: c.text }, grid: { display: false } },
+                    y: { ticks: { color: c.text }, grid: { color: c.grid } }
+                }
+            };
+
+            const labels = Array.from({length: ultimaRodada}, (_, i) => `R${i+1}`);
+            const datasetsPts = players.map(p => {
+                let sum = 0;
+                return { label: p, data: appData.pontos[p].map(v => sum += v), borderColor: palmeirasColors[p], tension: 0.3, pointRadius: 0 };
+            });
+            updateChart('cumulativeScoreChart', { type: 'line', data: { labels, datasets: datasetsPts }, options: lineOpt });
+
+            const datasetsVal = players.map(p => {
+                let sum = 100;
+                return { label: p, data: [100, ...appData.valor[p].map(v => sum += v)], borderColor: palmeirasColors[p], tension: 0.3, pointRadius: 0 };
+            });
+            updateChart('cumulativeCartoletasChart', { type: 'line', data: { labels: ['In.', ...labels], datasets: datasetsVal }, options: lineOpt });
+        }
+
+        function updateChart(id, config) {
+            if (charts[id]) charts[id].destroy();
+            charts[id] = new Chart(document.getElementById(id), config);
+        }
+
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./service-worker.js').catch(e => console.error(e));
+        }
+
+        document.addEventListener('DOMContentLoaded', iniciar);
     </script>
-    
 </body>
 </html>
