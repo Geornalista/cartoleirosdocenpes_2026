@@ -1,7 +1,7 @@
 {
-  "name": "Minutagem Evolution",
-  "short_name": "Minutagem",
-  "description": "Análise dos minutos dos gols",
+  "name": "CARTOLA DO CENPES - 2026",
+  "short_name": "CARTOLEIROS",
+  "description": "Grupo Cartoleiros do Cenpes 2026",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d1b2a",
