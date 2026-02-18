@@ -379,8 +379,7 @@
         function updateChart(id, config) {
             if (charts[id]) charts[id].destroy();
             charts[id] = new Chart(document.getElementById(id), config);
-
-        document.addEventListener('DOMContentLoaded', iniciar);
+        }
 
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./service-worker.js').catch(e => console.error(e));
