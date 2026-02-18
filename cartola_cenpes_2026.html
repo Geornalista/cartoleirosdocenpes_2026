@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pontuação e Cartoletas (Automático)</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <style>
+        body {
+            font-family: 'Open Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        
+        #loading-container {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.2em;
+        }
+        
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-top: 40px;
+        }
+
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        table {
+            width: 100%; 
+            max-width: 500px; 
+            border-collapse: collapse;
+            margin: 20px auto;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            table-layout: fixed;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+            word-break: break-word;
+        }
+
+        th:nth-child(1),
+        td:nth-child(1) { width: 60%; }
+        th:nth-child(2),
+        td:nth-child(2) { width: 40%; }
+
+        th {
+            background-color: #000000;
+            color: white;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #e0f7fa; }
+
+        .flex-container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 20px; 
+        }
+
+        .chart-box {
+            flex: 1;
+            min-width: 300px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-box h3 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        @media (max-width: 768px) {
+            .container { margin: 10px; padding: 10px; }
+            .flex-container { flex-direction: column; }
+            .chart-box { min-width: auto; }
+            h1 { font-size: 1.8em; }
+            h2 { font-size: 1.4em; }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading-container">
+        <p>Buscando dados na API do Cartola... Por favor, aguarde.</p>
+        <p>Isso pode levar alguns segundos.</p>
+    </div>
+
+    <div class="container hidden" id="main-container">
+        <h1>Pontuação e Cartoletas por Jogador</h1>
+
+        <label for="playerSelect">Selecione o Jogador:</label>
+        <select id="playerSelect">
+            <option value="GEORGE">GEORGE</option>
+            <option value="LEO">LEO</option>
+            <option value="PAULO">PAULO</option>
+            <option value="RAFAEL">RAFAEL</option>
+            <option value="VITOR">VITOR</option>
+            <option value="XINGU">XINGU</option>
+        </select>
+
+        <table id="dataTable">
+            <thead>
+                <tr>
+                    <th>Rodada</th>
+                    <th>Pontuação</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <label for="rodadaSelect">Selecione a Rodada:</label>
+        <select id="rodadaSelect"></select>
+
+        <h2>Comparação por Rodada</h2>
+        <div class="flex-container">
+            <div class="chart-box">
+                <h3>Pontuação</h3>
+                <canvas id="filtroChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>Valorização</h3>
+                <canvas id="valorizacaoChart"></canvas>
+            </div>
+        </div>
+
+        <h2>Vitórias, 2º Lugares e Lanternas</h2>
+        <div class="flex-container">
+            <div class="chart-box">
+                <h3>Vitórias</h3>
+                <canvas id="vitoriasChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>2º Lugares</h3>
+                <canvas id="segundosChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>Lanternas</h3>
+                <canvas id="lanternasChart"></canvas>
+            </div>
+        </div>
+
+        <label for="rodadasMensaisSelect">Rodadas para Classificação Mensal:</label>
+        <select id="rodadasMensaisSelect"></select>
+
+        <label for="mesSelect">Mês da Classificação:</label>
+        <select id="mesSelect">
+            <option value="Janeiro">Janeiro</option>
+            <option value="Fevereiro">Fevereiro</option>
+            <option value="Março">Março</option>
+            <option value="Abril">Abril</option>
+            <option value="Maio">Maio</option>
+            <option value="Junho">Junho</option>
+            <option value="Julho">Julho</option>
+            <option value="Agosto">Agosto</option>
+            <option value="Setembro">Setembro</option>
+            <option value="Outubro">Outubro</option>
+            <option value="Novembro">Novembro</option>
+            <option value="Dezembro">Dezembro</option>
+        </select>
+
+        <div class="chart-box">
+            <h3>Classificação Mensal</h3>
+            <canvas id="classificacaoMensalChart"></canvas>
+        </div>
+
+        <div class="flex-container">
+            <div class="chart-box">
+                <h3 style="font-size: 24px; font-weight: bold;">TOTAL DE PONTOS</h3>
+                <canvas id="cumulativeScoreChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3 style="font-size: 24px; font-weight: bold;">CARTOLETAS</h3>
+                <canvas id="cumulativeCartoletasChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const timeIDs = {
+            'GEORGE': 26323967, 'XINGU': 26331075, 'LEO': 20129034,
+            'PAULO': 27110420, 'VITOR': 5214103, 'RAFAEL': 22004383
+        };
+        const players = Object.keys(timeIDs);
+
+        async function iniciarAplicacao() {
+            const loadingContainer = document.getElementById('loading-container');
+            const mainContainer = document.getElementById('main-container');
+            const proxyUrl = 'https://corsproxy.io/?';
+
+            try {
+                const statusResponse = await fetch(`${proxyUrl}https://api.cartola.globo.com/mercado/status`);
+                const mercadoStatus = await statusResponse.json();
+                const ultimaRodadaFechada = mercadoStatus.rodada_atual - 1;
+
+                if (ultimaRodadaFechada <= 0) {
+                     loadingContainer.innerHTML = '<p>O campeonato ainda não começou.</p>';
+                     return;
+                }
+
+                const dadosPontuacao = {};
+                const dadosValorizacao = {};
+                const patrimonioAnterior = {};
+                players.forEach(p => { dadosPontuacao[p] = []; dadosValorizacao[p] = []; patrimonioAnterior[p] = 100.00; });
+
+                for (let r = 1; r <= ultimaRodadaFechada; r++) {
+                    for (const p of players) {
+                        try {
+                            const resp = await fetch(`${proxyUrl}https://api.cartola.globo.com/time/id/${timeIDs[p]}/${r}`);
+                            const data = await resp.json();
+                            dadosPontuacao[p].push(data.pontos || 0);
+                            const pat = data.patrimonio || patrimonioAnterior[p];
+                            dadosValorizacao[p].push(pat - patrimonioAnterior[p]);
+                            patrimonioAnterior[p] = pat;
+                        } catch (e) { dadosPontuacao[p].push(0); dadosValorizacao[p].push(0); }
+                    }
+                }
+
+                renderizarPaginaCompleta(dadosPontuacao, dadosValorizacao, ultimaRodadaFechada);
+                loadingContainer.classList.add('hidden');
+                mainContainer.classList.remove('hidden');
+            } catch (e) { loadingContainer.innerHTML = '<p>Erro ao carregar dados.</p>'; }
+        }
+
+        function renderizarPaginaCompleta(data, valorizacao, totalRodadas) {
+            Chart.register(ChartDataLabels);
+            const rodadas = Array.from({ length: totalRodadas }, (_, i) => i + 1);
+
+            const rodadaSelect = document.getElementById('rodadaSelect');
+            const rodadasMensaisSelect = document.getElementById('rodadasMensaisSelect');
+            rodadas.forEach(r => {
+                rodadaSelect.innerHTML += `<option value="${r}">${r}</option>`;
+                rodadasMensaisSelect.innerHTML += `<option value="${r}">${r}</option>`;
+            });
+            rodadaSelect.value = totalRodadas;
+            rodadasMensaisSelect.value = totalRodadas;
+
+            let charts = {};
+
+            function getBarChartConfig(label, dataValues, color, isInteger = false) {
+                return {
+                    type: 'bar',
+                    data: {
+                        labels: dataValues.map(e => e.player),
+                        datasets: [{ label, data: dataValues.map(e => e.value), backgroundColor: color, borderWidth: 1 }]
+                    },
+                    options: {
+                        indexAxis: 'y', // ESTA LINHA DEIXA O GRÁFICO HORIZONTAL
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        plugins: {
+                            title: { display: true, text: label, color: 'black', font: { size: 16 } },
+                            legend: { display: false },
+                            datalabels: {
+                                anchor: 'end', align: 'right', // Ajustado para alinhar à direita das barras
+                                formatter: (v) => isInteger ? v : v.toFixed(2),
+                                color: 'black', font: { size: 11 }
+                            }
+                        },
+                        scales: {
+                            x: { beginAtZero: true } // Garante que o eixo de valores comece no zero
+                        }
+                    }
+                };
+            }
+
+            function createChart(key, ctxId, config) {
+                if (charts[key]) charts[key].destroy();
+                charts[key] = new Chart(document.getElementById(ctxId).getContext('2d'), config);
+            }
+
+            function updateRodadaCharts() {
+                const r = parseInt(rodadaSelect.value) - 1;
+                const pts = players.map(p => ({ player: p, value: data[p][r] || 0 })).sort((a,b) => b.value - a.value);
+                const val = players.map(p => ({ player: p, value: valorizacao[p][r] || 0 })).sort((a,b) => b.value - a.value);
+                createChart('filtro', 'filtroChart', getBarChartConfig(`Pontuação R${r+1}`, pts, 'rgba(0,100,0,1)'));
+                createChart('valor', 'valorizacaoChart', getBarChartConfig(`Valorização R${r+1}`, val, 'rgba(139,0,0,1)'));
+            }
+
+            function updateVitoriasLanternas() {
+                const vit = players.map(() => 0), seg = players.map(() => 0), lan = players.map(() => 0);
+                for (let i = 0; i < rodadas.length; i++) {
+                    const rV = players.map((p, idx) => ({ idx, v: data[p][i] })).filter(x => x.v !== undefined).sort((a,b) => b.v - a.v);
+                    if (rV.length > 0) {
+                        const max = rV[0].v, min = rV[rV.length-1].v;
+                        rV.forEach(x => { if(x.v === max) vit[x.idx]++; if(x.v === min) lan[x.idx]++; });
+                        const sM = rV.find(x => x.v < max)?.v;
+                        if (sM !== undefined) rV.forEach(x => { if(x.v === sM) seg[x.idx]++; });
+                    }
+                }
+                const dV = players.map((p, i) => ({ player: p, value: vit[i] })).sort((a,b) => b.value - a.value);
+                const dS = players.map((p, i) => ({ player: p, value: seg[i] })).sort((a,b) => b.value - a.value);
+                const dL = players.map((p, i) => ({ player: p, value: lan[i] })).sort((a,b) => b.value - a.value);
+                createChart('vit', 'vitoriasChart', getBarChartConfig('Vitórias', dV, 'rgba(0,100,0,1)', true));
+                createChart('seg', 'segundosChart', getBarChartConfig('2º Lugares', dS, 'rgba(0,128,128,1)', true));
+                createChart('lan', 'lanternasChart', getBarChartConfig('Lanternas', dL, 'rgba(139,0,0,1)', true));
+            }
+
+            function updateClassificacaoMensal() {
+                const n = parseInt(rodadasMensaisSelect.value);
+                const res = players.map(p => {
+                    let t = 0, start = Math.max(0, rodadas.length - n);
+                    for (let i = start; i < rodadas.length; i++) t += (data[p][i] || 0);
+                    return { player: p, value: t };
+                }).sort((a,b) => b.value - a.value);
+                createChart('mes', 'classificacaoMensalChart', getBarChartConfig(`Classificação Mensal - ${mesSelect.value}`, res, 'rgba(0, 0, 139, 1)'));
+            }
+
+            function createCumulative() {
+                const c = { GEORGE: 'green', XINGU: 'red', LEO: 'black', PAULO: 'saddlebrown', VITOR: 'blue', RAFAEL: 'gold' };
+                const opt = { responsive: true, plugins: { legend: { position: 'top' }, datalabels: { display: false } } };
+                const sD = players.map(p => { let s = 0; return { label: p, data: data[p].map(v => s += (v || 0)), borderColor: c[p], fill: false }; });
+                createChart('cumPts', 'cumulativeScoreChart', { type: 'line', data: { labels: rodadas.map(r => `R${r}`), datasets: sD }, options: opt });
+                const cD = players.map(p => { let t = 100; return { label: p, data: [100, ...valorizacao[p].map(v => t += (v || 0))], borderColor: c[p], fill: false }; });
+                createChart('cumCart', 'cumulativeCartoletasChart', { type: 'line', data: { labels: ['Início', ...rodadas.map(r => `R${r}`)], datasets: cD }, options: opt });
+            }
+
+            document.getElementById('playerSelect').addEventListener('change', (e) => {
+                const body = document.querySelector('#dataTable tbody');
+                body.innerHTML = '';
+                rodadas.forEach((r, i) => {
+                    body.insertAdjacentHTML('beforeend', `<tr><td>${r}</td><td>${(data[e.target.value][i] || 0).toFixed(2)}</td></tr>`);
+                });
+            });
+
+            rodadaSelect.addEventListener('change', updateRodadaCharts);
+            mesSelect.addEventListener('change', updateClassificacaoMensal);
+            rodadasMensaisSelect.addEventListener('change', updateClassificacaoMensal);
+
+            document.getElementById('playerSelect').dispatchEvent(new Event('change'));
+            updateRodadaCharts(); updateVitoriasLanternas(); updateClassificacaoMensal(); createCumulative();
+        }
+
+        document.addEventListener('DOMContentLoaded', iniciarAplicacao);
+    </script>
+</body>
+</html>
