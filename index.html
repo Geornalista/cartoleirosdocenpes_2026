@@ -8,6 +8,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="apple-mobile-web-screen-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Cartola Stats">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    
     <style>
         :root {
             --primary: #2ecc71;
@@ -459,5 +466,16 @@
 
         document.addEventListener('DOMContentLoaded', iniciarAplicacao);
     </script>
+    
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./service-worker.js')
+            .then(reg => console.log('Service Worker registrado!', reg))
+            .catch(err => console.log('Erro ao registrar Service Worker', err));
+        });
+      }
+    </script>
+    
 </body>
 </html>
