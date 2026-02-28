@@ -25,6 +25,8 @@
             --text-muted: #666;
             --border: #eeeeee;
             --primary: #2ecc71;
+            --secondary: #3498db;
+            --danger: #e74c3c;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             --header-bg: #000000;
         }
@@ -125,6 +127,9 @@
         }
         .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .money-positive { color: #2ecc71; font-weight: bold; }
+        .money-negative { color: #e74c3c; font-weight: bold; }
     </style>
 </head>
 
@@ -135,11 +140,21 @@
     </div>
 
     <header>
-        <h1>LIGA CARTOLEIROS DO CENPES - 2026</h1>
+        <h1>Cartola Stats Dash</h1>
         <button id="themeToggle" class="theme-toggle">🌙</button>
     </header>
 
     <div class="container hidden" id="main-container">
+        
+        <h2>Resumo Financeiro</h2>
+        <div class="card">
+            <h3>Saldo Atual (Acumulado R$)</h3>
+            <canvas id="financeiroChart"></canvas>
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 10px;">
+                Custo: R$ 5/rod. | Prêmios: 1º (R$ 24) e 2º (R$ 6)
+            </p>
+        </div>
+
         <div class="input-group">
             <label>JOGADOR</label>
             <select id="playerSelect">
@@ -202,7 +217,12 @@
         const players = Object.keys(timeIDs);
         let appData = { pontos: {}, valor: {} }, ultimaRodada = 0, charts = {};
 
-        // Tema Dark/Light
+        // Configurações da Liga
+        const CUSTO_RODADA = 5;
+        const PREMIO_TOTAL = 30;
+        const PERCENT_1ST = 0.8;
+        const PERCENT_2ND = 0.2;
+
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
 
@@ -224,7 +244,11 @@
             try {
                 const status = await (await fetch(`${proxy}https://api.cartola.globo.com/mercado/status`)).json();
                 ultimaRodada = status.rodada_atual - 1;
-                if (ultimaRodada <= 0) return document.getElementById('loading-container').innerHTML = "<p style='padding:20px'>Aguardando Rodada 01.</p>";
+                
+                if (ultimaRodada <= 0) {
+                    document.getElementById('loading-container').innerHTML = "<p style='padding:20px'>Aguardando Rodada 01 para iniciar os cálculos.</p>";
+                    return;
+                }
 
                 players.forEach(p => { appData.pontos[p] = []; appData.valor[p] = []; });
                 let patAnt = players.reduce((acc, p) => ({ ...acc, [p]: 100 }), {});
@@ -240,7 +264,10 @@
                     }));
                 }
                 setupUI();
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('loading-container').innerHTML = "<p style='padding:20px'>Erro ao carregar dados da API do Cartola.</p>";
+            }
         }
 
         function setupUI() {
@@ -278,7 +305,7 @@
             };
         }
 
-        function getBarConfig(label, labels, data, color, isInt = false) {
+        function getBarConfig(label, labels, data, color, isCurrency = false, isInt = false) {
             const c = getChartColors();
             return {
                 type: 'bar',
@@ -288,20 +315,23 @@
                     plugins: { 
                         legend: { display: false },
                         datalabels: { 
-                            display: true, // GARANTE QUE APAREÇA
+                            display: true,
                             anchor: 'end', 
                             align: 'end', 
                             offset: 4,
                             color: c.mainText, 
-                            font: { weight: 'bold', size: 12 }, 
-                            formatter: v => isInt ? v : v.toFixed(1) 
+                            font: { weight: 'bold', size: 11 }, 
+                            formatter: v => {
+                                if (isCurrency) return 'R$ ' + v.toFixed(2);
+                                return isInt ? v : v.toFixed(1);
+                            }
                         }
                     },
                     scales: {
                         x: { 
                             display: false, 
                             beginAtZero: true,
-                            grace: '15%' // ADICIONA ESPAÇO NO FINAL PARA O NÚMERO NÃO SUMIR
+                            grace: '20%' 
                         },
                         y: { grid: { display: false }, ticks: { color: c.text, font: { size: 11, weight: '600' } } }
                     }
@@ -314,33 +344,64 @@
             const rIdx = document.getElementById('rodadaSelect').value - 1;
             const c = getChartColors();
 
-            // 1. Rodada Atual
+            // 1. Cálculos Financeiros e Frequência
+            let vit = {}, seg = {}, lan = {}, saldo = {};
+            players.forEach(p => { vit[p] = 0; seg[p] = 0; lan[p] = 0; saldo[p] = 0; });
+
+            for (let i = 0; i < ultimaRodada; i++) {
+                let r = players.map(p => ({p, v: appData.pontos[p][i]})).sort((a,b)=>b.v-a.v);
+                
+                // Gasto da rodada
+                players.forEach(p => saldo[p] -= CUSTO_RODADA);
+
+                // Vencedores (Tratando empates)
+                const maxVal = r[0].v;
+                const winners = r.filter(x => x.v === maxVal);
+                const premio1 = (PREMIO_TOTAL * PERCENT_1ST) / winners.length;
+                winners.forEach(w => {
+                    vit[w.p]++;
+                    saldo[w.p] += premio1;
+                });
+
+                // Segundos Lugares (Próximo valor distinto abaixo do máximo)
+                const sVal = r.find(x => x.v < maxVal)?.v;
+                if (sVal !== undefined) {
+                    const seconds = r.filter(x => x.v === sVal);
+                    const premio2 = (PREMIO_TOTAL * PERCENT_2ND) / seconds.length;
+                    seconds.forEach(s => {
+                        seg[s.p]++;
+                        saldo[s.p] += premio2;
+                    });
+                }
+
+                // Lanterna
+                const minVal = r[r.length-1].v;
+                const losers = r.filter(x => x.v === minVal);
+                losers.forEach(l => lan[l.p]++);
+            }
+
+            // --- GRÁFICO FINANCEIRO ---
+            const dSaldo = players.map(p => ({p, v: saldo[p]})).sort((a,b)=>b.v-a.v);
+            const saldoColors = dSaldo.map(x => x.v >= 0 ? '#2ecc71' : '#e74c3c');
+            updateChart('financeiroChart', getBarConfig('', dSaldo.map(x=>x.p), dSaldo.map(x=>x.v), saldoColors, true));
+
+            // --- RODADA SELECIONADA ---
             const pR = players.map(p => ({p, v: appData.pontos[p][rIdx]})).sort((a,b) => b.v - a.v);
             updateChart('filtroChart', getBarConfig('', pR.map(x=>x.p), pR.map(x=>x.v), '#2ecc71'));
             
             const vR = players.map(p => ({p, v: appData.valor[p][rIdx]})).sort((a,b) => b.v - a.v);
             updateChart('valorizacaoChart', getBarConfig('', vR.map(x=>x.p), vR.map(x=>x.v), '#e74c3c'));
 
-            // 2. Frequências (Total acumulado)
-            let vit = {}, seg = {}, lan = {};
-            players.forEach(p => vit[p] = seg[p] = lan[p] = 0);
-            for (let i = 0; i < ultimaRodada; i++) {
-                let r = players.map(p => ({p, v: appData.pontos[p][i]})).sort((a,b)=>b.v-a.v);
-                vit[r[0].p]++;
-                lan[r[r.length-1].p]++;
-                const sVal = r.find(x => x.v < r[0].v)?.v;
-                if (sVal !== undefined) r.forEach(x => { if(x.v === sVal) seg[x.p]++; });
-            }
-            
+            // --- FREQUÊNCIAS ---
             const dVit = players.map(p => ({p, v: vit[p]})).sort((a,b)=>b.v-a.v);
             const dSeg = players.map(p => ({p, v: seg[p]})).sort((a,b)=>b.v-a.v);
             const dLan = players.map(p => ({p, v: lan[p]})).sort((a,b)=>b.v-a.v);
 
-            updateChart('vitoriasChart', getBarConfig('', dVit.map(x=>x.p), dVit.map(x=>x.v), '#2ecc71', true));
-            updateChart('segundosChart', getBarConfig('', dSeg.map(x=>x.p), dSeg.map(x=>x.v), '#3498db', true));
-            updateChart('lanternasChart', getBarConfig('', dLan.map(x=>x.p), dLan.map(x=>x.v), '#e74c3c', true));
+            updateChart('vitoriasChart', getBarConfig('', dVit.map(x=>x.p), dVit.map(x=>x.v), '#2ecc71', false, true));
+            updateChart('segundosChart', getBarConfig('', dSeg.map(x=>x.p), dSeg.map(x=>x.v), '#3498db', false, true));
+            updateChart('lanternasChart', getBarConfig('', dLan.map(x=>x.p), dLan.map(x=>x.v), '#e74c3c', false, true));
 
-            // 3. Classificação Mensal
+            // --- CLASSIFICAÇÃO MENSAL ---
             const nRodadas = parseInt(document.getElementById('rodadasMensaisSelect').value);
             const mesSel = document.getElementById('mesSelect').value;
             const classif = players.map(p => {
@@ -351,38 +412,44 @@
             }).sort((a,b) => b.v - a.v);
             updateChart('classificacaoMensalChart', getBarConfig(`${mesSel}`, classif.map(x=>x.p), classif.map(x=>x.v), '#9b59b6'));
 
-            // 4. Evolução (Linear - Tension 0)
+            // --- EVOLUÇÃO ---
             const palmeirasColors = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#34495e', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
             const lineOpt = { 
                 responsive: true, 
-                plugins: { legend: { labels: { color: c.text, boxWidth: 10 } }, datalabels: { display: false } },
+                plugins: { legend: { labels: { color: c.text, boxWidth: 10, font: { size: 10 } } }, datalabels: { display: false } },
                 scales: { 
-                    x: { ticks: { color: c.text }, grid: { display: false } },
-                    y: { ticks: { color: c.text }, grid: { color: c.grid } }
+                    x: { ticks: { color: c.text, font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { color: c.text, font: { size: 10 } }, grid: { color: c.grid } }
                 }
             };
 
             const labels = Array.from({length: ultimaRodada}, (_, i) => `R${i+1}`);
             const datasetsPts = players.map(p => {
                 let sum = 0;
-                return { label: p, data: appData.pontos[p].map(v => sum += v), borderColor: palmeirasColors[p], tension: 0, pointRadius: 3 };
+                return { label: p, data: appData.pontos[p].map(v => sum += v), borderColor: palmeirasColors[p], tension: 0, pointRadius: 2, borderWidth: 2 };
             });
             updateChart('cumulativeScoreChart', { type: 'line', data: { labels, datasets: datasetsPts }, options: lineOpt });
 
             const datasetsVal = players.map(p => {
                 let sum = 100;
-                return { label: p, data: [100, ...appData.valor[p].map(v => sum += v)], borderColor: palmeirasColors[p], tension: 0, pointRadius: 3 };
+                return { label: p, data: [100, ...appData.valor[p].map(v => sum += v)], borderColor: palmeirasColors[p], tension: 0, pointRadius: 2, borderWidth: 2 };
             });
             updateChart('cumulativeCartoletasChart', { type: 'line', data: { labels: ['In.', ...labels], datasets: datasetsVal }, options: lineOpt });
         }
 
         function updateChart(id, config) {
             if (charts[id]) charts[id].destroy();
-            charts[id] = new Chart(document.getElementById(id), config);
+            const ctx = document.getElementById(id);
+            if (ctx) charts[id] = new Chart(ctx, config);
         }
 
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./service-worker.js').catch(e => console.error(e));
+        // Registra o Service Worker (Essencial para PWA) protegendo contra erros no ambiente de preview
+        if ('serviceWorker' in navigator && !window.location.href.startsWith('blob:')) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso!'))
+                    .catch(err => console.error('Erro ao registrar Service Worker:', err));
+            });
         }
 
         document.addEventListener('DOMContentLoaded', iniciar);
