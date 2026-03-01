@@ -4,18 +4,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cartola Stats App</title>
+    <title>Cartoleiros do Cenpes</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Cartola Stats">
+    <meta name="apple-mobile-web-app-title" content="Cartoleiros do Cenpes">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <meta name="theme-color" content="#27ae60">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         :root {
@@ -29,6 +30,9 @@
             --danger: #e74c3c;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             --header-bg: #000000;
+            --nav-bg: #ffffff;
+            --nav-active: #2ecc71;
+            --nav-inactive: #999999;
         }
 
         body.dark-mode {
@@ -40,6 +44,9 @@
             --primary: #27ae60;
             --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
             --header-bg: #1a1a1a;
+            --nav-bg: #1a1a1a;
+            --nav-active: #27ae60;
+            --nav-inactive: #666666;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -50,7 +57,9 @@
             background-color: var(--bg);
             color: var(--text-main);
             transition: background-color 0.3s, color 0.3s;
-            padding-bottom: 40px;
+            /* Espaço extra para não esconder conteúdo atrás do bottom nav */
+            padding-bottom: 80px; 
+            overflow-x: hidden;
         }
 
         header {
@@ -65,11 +74,10 @@
             position: relative;
         }
 
-        header h1 { margin: 0; font-size: 1.2rem; text-transform: uppercase; letter-spacing: 1px; }
+        header h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
 
-        .theme-toggle {
+        .header-btn {
             position: absolute;
-            right: 20px;
             top: 50%;
             transform: translateY(-50%);
             background: rgba(255,255,255,0.1);
@@ -82,9 +90,20 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            width: 38px;
+            height: 38px;
         }
 
-        .container { max-width: 600px; margin: 0 auto; padding: 0 16px; }
+        .header-btn.left { left: 15px; }
+        .header-btn.right { right: 15px; }
+
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 0 16px; 
+            min-height: 70vh;
+        }
+        
         .hidden { display: none !important; }
 
         .card {
@@ -118,8 +137,6 @@
         table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; }
         th { background: var(--bg); color: var(--text-muted); font-size: 0.75rem; padding: 12px; text-transform: uppercase; }
         td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border); }
-
-        h2 { font-size: 1.1rem; margin: 30px 0 15px 0; border-left: 4px solid var(--primary); padding-left: 10px; }
 
         #loading-container {
             position: fixed; inset: 0; background: var(--bg);
@@ -160,6 +177,71 @@
             font-weight: 700;
             color: var(--text-main);
         }
+
+        /* --- Estilos das Abas e Navegação --- */
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--nav-inactive);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--nav-active);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+        
+        .tab-title {
+            font-size: 1.2rem; 
+            margin: 0 0 20px 0; 
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
     </style>
 </head>
 
@@ -170,77 +252,119 @@
     </div>
 
     <header>
-        <h1>Cartola Stats Dash</h1>
-        <button id="themeToggle" class="theme-toggle">🌙</button>
+        <button id="exportBtn" class="header-btn left" title="Exportar Tela">📸</button>
+        <h1>Cartoleiros do Cenpes</h1>
+        <button id="themeToggle" class="header-btn right" title="Mudar Tema">🌙</button>
     </header>
 
     <div class="container hidden" id="main-container">
         
-        <h2>Resumo Financeiro</h2>
-        <div class="card">
-            <h3>Saldo Atual (Acumulado R$)</h3>
-            <div id="financeiroList" class="finance-grid"></div>
-            <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 15px;">
-                Custo: R$ 5/rod. | Prêmios: 1º (R$ 24) e 2º (R$ 6)
-            </p>
-        </div>
-
-        <div class="input-group">
-            <label>JOGADOR</label>
-            <select id="playerSelect">
-                <option value="GEORGE">GEORGE</option>
-                <option value="LEO">LEO</option>
-                <option value="PAULO">PAULO</option>
-                <option value="RAFAEL">RAFAEL</option>
-                <option value="VITOR">VITOR</option>
-                <option value="XINGU">XINGU</option>
-            </select>
-        </div>
-
-        <div class="card" style="padding: 0;">
-            <table id="dataTable">
-                <thead><tr><th>Rodada</th><th>Pontos</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-
-        <div class="input-group">
-            <label>ANALISAR RODADA</label>
-            <select id="rodadaSelect"></select>
-        </div>
-
-        <div class="card"><h3>Pontuação na Rodada</h3><canvas id="filtroChart"></canvas></div>
-        <div class="card"><h3>Valorização na Rodada</h3><canvas id="valorizacaoChart"></canvas></div>
-
-        <h2>Frequência (Total)</h2>
-        <div class="card"><h3>Vitórias</h3><canvas id="vitoriasChart"></canvas></div>
-        <div class="card"><h3>2º Lugares</h3><canvas id="segundosChart"></canvas></div>
-        <div class="card"><h3>Lanternas</h3><canvas id="lanternasChart"></canvas></div>
-
-        <h2>Classificação Mensal</h2>
-        <div class="card">
-            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                <div style="flex:1">
-                    <label>RODADAS</label>
-                    <select id="rodadasMensaisSelect"></select>
-                </div>
-                <div style="flex:1">
-                    <label>MÊS</label>
-                    <select id="mesSelect">
-                        <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
-                        <option>Abril</option><option>Maio</option><option>Junho</option>
-                        <option>Julho</option><option>Agosto</option><option>Setembro</option>
-                        <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
-                    </select>
-                </div>
+        <!-- TELA 1: Resumo Financeiro -->
+        <div class="tab-pane active" id="tab-0">
+            <h2 class="tab-title">Resumo Financeiro</h2>
+            <div class="card">
+                <h3>Saldo Atual (Acumulado R$)</h3>
+                <div id="financeiroList" class="finance-grid"></div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 15px;">
+                    Custo: R$ 5/rod. | Prêmios: 1º (R$ 24) e 2º (R$ 6)
+                </p>
             </div>
-            <canvas id="classificacaoMensalChart"></canvas>
+
+            <div class="input-group">
+                <label>DESEMPENHO DO JOGADOR</label>
+                <select id="playerSelect">
+                    <option value="GEORGE">GEORGE</option>
+                    <option value="LEO">LEO</option>
+                    <option value="PAULO">PAULO</option>
+                    <option value="RAFAEL">RAFAEL</option>
+                    <option value="VITOR">VITOR</option>
+                    <option value="XINGU">XINGU</option>
+                </select>
+            </div>
+
+            <div class="card" style="padding: 0;">
+                <table id="dataTable">
+                    <thead><tr><th>Rodada</th><th>Pontos</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
-        <h2>Evolução (Acumulado)</h2>
-        <div class="card"><h3>Pontos Acumulados</h3><canvas id="cumulativeScoreChart"></canvas></div>
-        <div class="card"><h3>Patrimônio (C$)</h3><canvas id="cumulativeCartoletasChart"></canvas></div>
+        <!-- TELA 2: Análise da Rodada -->
+        <div class="tab-pane" id="tab-1">
+            <h2 class="tab-title">Análise da Rodada</h2>
+            <div class="input-group">
+                <label>SELECIONE A RODADA</label>
+                <select id="rodadaSelect"></select>
+            </div>
+
+            <div class="card"><h3>Pontuação na Rodada</h3><div class="chart-container"><canvas id="filtroChart"></canvas></div></div>
+            <div class="card"><h3>Valorização na Rodada</h3><div class="chart-container"><canvas id="valorizacaoChart"></canvas></div></div>
+        </div>
+
+        <!-- TELA 3: Frequência -->
+        <div class="tab-pane" id="tab-2">
+            <h2 class="tab-title">Frequência (Total)</h2>
+            <div class="card"><h3>Vitórias</h3><div class="chart-container"><canvas id="vitoriasChart"></canvas></div></div>
+            <div class="card"><h3>2º Lugares</h3><div class="chart-container"><canvas id="segundosChart"></canvas></div></div>
+            <div class="card"><h3>Lanternas</h3><div class="chart-container"><canvas id="lanternasChart"></canvas></div></div>
+        </div>
+
+        <!-- TELA 4: Classificação -->
+        <div class="tab-pane" id="tab-3">
+            <h2 class="tab-title">Classificação Mensal</h2>
+            <div class="card">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex:1">
+                        <label>RODADAS</label>
+                        <select id="rodadasMensaisSelect"></select>
+                    </div>
+                    <div style="flex:1">
+                        <label>MÊS</label>
+                        <select id="mesSelect">
+                            <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+                            <option>Abril</option><option>Maio</option><option>Junho</option>
+                            <option>Julho</option><option>Agosto</option><option>Setembro</option>
+                            <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="classificacaoMensalChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- TELA 5: Evolução -->
+        <div class="tab-pane" id="tab-4">
+            <h2 class="tab-title">Evolução Acumulada</h2>
+            <div class="card"><h3>Pontos Acumulados</h3><div class="chart-container"><canvas id="cumulativeScoreChart"></canvas></div></div>
+            <div class="card"><h3>Patrimônio (C$)</h3><div class="chart-container"><canvas id="cumulativeCartoletasChart"></canvas></div></div>
+        </div>
+
     </div>
+
+    <!-- Navegação Inferior -->
+    <nav class="bottom-nav hidden" id="bottom-nav">
+        <div class="nav-item active" onclick="switchTab(0)">
+            <span class="nav-icon">💰</span>
+            <span>Finanças</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(1)">
+            <span class="nav-icon">📊</span>
+            <span>Rodada</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(2)">
+            <span class="nav-icon">🏆</span>
+            <span>Frequência</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(3)">
+            <span class="nav-icon">📅</span>
+            <span>Ranking</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(4)">
+            <span class="nav-icon">📈</span>
+            <span>Evolução</span>
+        </div>
+    </nav>
 
     <script>
         const timeIDs = { 'GEORGE': 26323967, 'XINGU': 26331075, 'LEO': 20129034, 'PAULO': 27110420, 'VITOR': 5214103, 'RAFAEL': 22004383 };
@@ -256,6 +380,7 @@
         const themeToggle = document.getElementById('themeToggle');
         const body = document.body;
 
+        // Gestão de Temas
         themeToggle.addEventListener('click', () => {
             body.classList.toggle('dark-mode');
             const isDark = body.classList.contains('dark-mode');
@@ -269,6 +394,65 @@
             themeToggle.innerText = '☀️';
         }
 
+        // Lógica de Abas (Tabs)
+        let currentTab = 0;
+        const totalTabs = 5;
+
+        function switchTab(index) {
+            if (index < 0 || index >= totalTabs) return;
+            
+            // Atualiza botões
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+
+            // Atualiza painéis
+            document.querySelectorAll('.tab-pane').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+
+            currentTab = index;
+            // Garante que o resize dos gráficos aconteça quando a aba fica visível
+            window.dispatchEvent(new Event('resize'));
+        }
+
+        // Detecção de Deslizar (Swipe)
+        let touchstartX = 0;
+        let touchendX = 0;
+        let touchstartY = 0;
+        let touchendY = 0;
+
+        const container = document.getElementById('main-container');
+
+        container.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        container.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, {passive: true});
+
+        function handleSwipe() {
+            const diffX = touchendX - touchstartX;
+            const diffY = touchendY - touchstartY;
+            
+            // Só ativa o swipe se o movimento horizontal for maior que o vertical e maior que um limite (50px)
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX < 0) {
+                    // Swipe para esquerda (Próxima aba)
+                    switchTab(Math.min(currentTab + 1, totalTabs - 1));
+                } else {
+                    // Swipe para direita (Aba anterior)
+                    switchTab(Math.max(currentTab - 1, 0));
+                }
+            }
+        }
+
+
+        // Lógica Principal de Dados
         async function iniciar() {
             const proxy = 'https://corsproxy.io/?';
             try {
@@ -316,8 +500,11 @@
 
             updateTable();
             renderizarGraficos();
+            
+            // Mostra interface
             document.getElementById('loading-container').classList.add('hidden');
             document.getElementById('main-container').classList.remove('hidden');
+            document.getElementById('bottom-nav').classList.remove('hidden');
         }
 
         function updateTable() {
@@ -341,7 +528,9 @@
                 type: 'bar',
                 data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6 }] },
                 options: {
-                    indexAxis: 'y', responsive: true,
+                    indexAxis: 'y', 
+                    responsive: true,
+                    maintainAspectRatio: false,
                     plugins: { 
                         legend: { display: false },
                         datalabels: { 
@@ -353,7 +542,7 @@
                             font: { weight: 'bold', size: 11 }, 
                             formatter: v => {
                                 if (isCurrency) return 'R$ ' + v.toFixed(2);
-                                return isInt ? v : v.toFixed(1);
+                                return isInt ? v : v.toFixed(2);
                             }
                         }
                     },
@@ -381,10 +570,8 @@
             for (let i = 0; i < ultimaRodada; i++) {
                 let r = players.map(p => ({p, v: appData.pontos[p][i]})).sort((a,b)=>b.v-a.v);
                 
-                // Gasto da rodada
                 players.forEach(p => saldo[p] -= CUSTO_RODADA);
 
-                // Vencedores (Tratando empates)
                 const maxVal = r[0].v;
                 const winners = r.filter(x => x.v === maxVal);
                 const premio1 = (PREMIO_TOTAL * PERCENT_1ST) / winners.length;
@@ -393,7 +580,6 @@
                     saldo[w.p] += premio1;
                 });
 
-                // Segundos Lugares (Próximo valor distinto abaixo do máximo)
                 const sVal = r.find(x => x.v < maxVal)?.v;
                 if (sVal !== undefined) {
                     const seconds = r.filter(x => x.v === sVal);
@@ -404,13 +590,12 @@
                     });
                 }
 
-                // Lanterna
                 const minVal = r[r.length-1].v;
                 const losers = r.filter(x => x.v === minVal);
                 losers.forEach(l => lan[l.p]++);
             }
 
-            // --- RESUMO FINANCEIRO (GRID DE VALORES) ---
+            // --- TELA 1: RESUMO FINANCEIRO ---
             const dSaldo = players.map(p => ({p, v: saldo[p]})).sort((a,b)=>b.v-a.v);
             const finList = document.getElementById('financeiroList');
             if(finList) {
@@ -429,14 +614,14 @@
                 });
             }
 
-            // --- RODADA SELECIONADA ---
+            // --- TELA 2: RODADA SELECIONADA ---
             const pR = players.map(p => ({p, v: appData.pontos[p][rIdx]})).sort((a,b) => b.v - a.v);
             updateChart('filtroChart', getBarConfig('', pR.map(x=>x.p), pR.map(x=>x.v), '#2ecc71'));
             
             const vR = players.map(p => ({p, v: appData.valor[p][rIdx]})).sort((a,b) => b.v - a.v);
             updateChart('valorizacaoChart', getBarConfig('', vR.map(x=>x.p), vR.map(x=>x.v), '#e74c3c'));
 
-            // --- FREQUÊNCIAS ---
+            // --- TELA 3: FREQUÊNCIAS ---
             const dVit = players.map(p => ({p, v: vit[p]})).sort((a,b)=>b.v-a.v);
             const dSeg = players.map(p => ({p, v: seg[p]})).sort((a,b)=>b.v-a.v);
             const dLan = players.map(p => ({p, v: lan[p]})).sort((a,b)=>b.v-a.v);
@@ -445,7 +630,7 @@
             updateChart('segundosChart', getBarConfig('', dSeg.map(x=>x.p), dSeg.map(x=>x.v), '#3498db', false, true));
             updateChart('lanternasChart', getBarConfig('', dLan.map(x=>x.p), dLan.map(x=>x.v), '#e74c3c', false, true));
 
-            // --- CLASSIFICAÇÃO MENSAL ---
+            // --- TELA 4: CLASSIFICAÇÃO MENSAL ---
             const nRodadas = parseInt(document.getElementById('rodadasMensaisSelect').value);
             const mesSel = document.getElementById('mesSelect').value;
             const classif = players.map(p => {
@@ -456,14 +641,32 @@
             }).sort((a,b) => b.v - a.v);
             updateChart('classificacaoMensalChart', getBarConfig(`${mesSel}`, classif.map(x=>x.p), classif.map(x=>x.v), '#9b59b6'));
 
-            // --- EVOLUÇÃO ---
+            // --- TELA 5: EVOLUÇÃO ---
             const palmeirasColors = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#34495e', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
             const lineOpt = { 
                 responsive: true, 
-                plugins: { legend: { labels: { color: c.text, boxWidth: 10, font: { size: 10 } } }, datalabels: { display: false } },
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { labels: { color: c.text, boxWidth: 10, font: { size: 10 } } }, 
+                    datalabels: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                },
                 scales: { 
                     x: { ticks: { color: c.text, font: { size: 10 } }, grid: { display: false } },
-                    y: { ticks: { color: c.text, font: { size: 10 } }, grid: { color: c.grid } }
+                    y: { 
+                        ticks: { 
+                            color: c.text, 
+                            font: { size: 10 },
+                            callback: function(value) { return value.toFixed(2); }
+                        }, 
+                        grid: { color: c.grid } 
+                    }
                 }
             };
 
@@ -487,7 +690,6 @@
             if (ctx) charts[id] = new Chart(ctx, config);
         }
 
-        // Registra o Service Worker (Essencial para PWA) protegendo contra erros no ambiente de preview
         if ('serviceWorker' in navigator && !window.location.href.startsWith('blob:')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./service-worker.js')
@@ -495,6 +697,70 @@
                     .catch(err => console.error('Erro ao registrar Service Worker:', err));
             });
         }
+
+        // --- LÓGICA DE EXPORTAÇÃO DE IMAGEM ---
+        document.getElementById('exportBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('exportBtn');
+            const originalIcon = btn.innerText;
+            btn.innerText = '⏳'; // Muda o ícone temporariamente para mostrar que está processando
+            
+            // Delay ligeiramente maior para garantir que gráficos terminaram de renderizar
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            try {
+                // Encontra a aba (tela) que está ativa no momento
+                const activeTab = document.querySelector('.tab-pane.active');
+                
+                // Captura a cor de fundo atual (tema claro ou escuro) para garantir uma imagem perfeita
+                const bgColor = window.getComputedStyle(document.body).backgroundColor;
+                
+                // Gera o print
+                const canvas = await html2canvas(activeTab, {
+                    backgroundColor: bgColor,
+                    scale: 2, // Qualidade 2x melhor
+                    useCORS: true,
+                    logging: false,
+                    onclone: (clonedDoc) => {
+                        // Garante que o tema (claro/escuro) seja copiado
+                        if (document.body.classList.contains('dark-mode')) {
+                            clonedDoc.body.classList.add('dark-mode');
+                        }
+                        
+                        const clonedTab = clonedDoc.querySelector('.tab-pane.active');
+                        
+                        // CRÍTICO: Desliga a animação no momento do print!
+                        // Isso impede que a imagem saia transparente/lavada.
+                        clonedTab.style.animation = 'none';
+                        clonedTab.style.opacity = '1';
+                        
+                        // Ajuste visual
+                        clonedTab.style.padding = '20px';
+                        clonedTab.style.backgroundColor = bgColor;
+                    }
+                });
+                
+                // Converte em arquivo JPG
+                const image = canvas.toDataURL("image/jpeg", 0.95);
+                
+                // Pega o título da aba para nomear o arquivo (ex: "resumo_financeiro")
+                const tabTitle = activeTab.querySelector('.tab-title').innerText
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                    .replace(/\s+/g, '_').toLowerCase();
+                
+                // Força o download no dispositivo
+                const link = document.createElement('a');
+                link.download = `cartoleiros_cenpes_${tabTitle}.jpg`;
+                link.href = image;
+                link.click();
+                
+            } catch (err) {
+                console.error("Erro ao exportar a tela:", err);
+                alert("Houve um pequeno erro ao gerar a imagem. Tente novamente.");
+            } finally {
+                // Volta o botão ao normal
+                btn.innerText = originalIcon;
+            }
+        });
 
         document.addEventListener('DOMContentLoaded', iniciar);
     </script>
