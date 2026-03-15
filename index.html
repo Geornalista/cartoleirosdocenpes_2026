@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIGA CARTOLEIROS CENPES — 2026</title>
+    <title>CARTOLEIROS DO CENPES</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
@@ -232,7 +232,7 @@
                 const tabName = activeTabBtn ? activeTabBtn.innerText.trim() : 'Estatísticas';
                 
                 const titleEl = document.createElement('div');
-                titleEl.innerHTML = `<h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-4 mt-2 text-center pb-2 border-b border-gray-200 dark:border-gray-700">🏆 Nossa Liga Cartola FC<br><span class="text-orange-600 dark:text-orange-500 text-lg">${tabName}</span></h2>`;
+                titleEl.innerHTML = `<h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-4 mt-2 text-center pb-2 border-b border-gray-200 dark:border-gray-700">🏆 CARTOLEIROS DO CENPES<br><span class="text-orange-600 dark:text-orange-500 text-lg">${tabName}</span></h2>`;
                 activeView.insertBefore(titleEl, activeView.firstChild);
 
                 // Configuração baseada no tema ativo
@@ -260,7 +260,7 @@
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             files: [file],
-                            title: 'Nossa Liga Cartola FC',
+                            title: 'CARTOLEIROS DO CENPES',
                             text: `Acompanha o ${tabName} atualizado da nossa liga!`
                         });
                     } else {
@@ -481,15 +481,15 @@
 
                 return `
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td class="py-3 px-3 sm:px-4 text-center w-12 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
-                            <img src="${item.escudo}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800">
-                            <div>
-                                <div class="font-bold text-gray-800 dark:text-gray-100 text-sm sm:text-base leading-tight">${item.nomeTime}</div>
-                                <div class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">${item.nomeCartola}</div>
+                        <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
+                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
+                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <div class="overflow-hidden min-w-0">
+                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
+                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">${item.nomeCartola}</div>
                             </div>
                         </td>
-                        <td class="py-3 px-3 sm:px-4 text-right font-bold text-blue-600 dark:text-blue-400 text-base sm:text-lg align-middle">
+                        <td class="py-3 px-2 sm:px-4 text-right font-bold text-blue-600 dark:text-blue-400 text-sm sm:text-lg align-middle whitespace-nowrap">
                             ${formatPoints(item.value)}
                         </td>
                     </tr>
@@ -498,12 +498,12 @@
             
             document.getElementById('ranking-rodada-container').innerHTML = `
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-xs border-b border-gray-200 dark:border-gray-700">
+                    <table class="w-full text-sm text-left table-fixed sm:table-auto">
+                        <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] sm:text-xs border-b border-gray-200 dark:border-gray-700">
                             <tr>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold">Pos</th>
-                                <th class="py-3 px-3 sm:px-4 font-bold">Time</th>
-                                <th class="py-3 px-3 sm:px-4 text-right font-bold">Pontos</th>
+                                <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
+                                <th class="py-3 px-2 sm:px-4 font-bold w-1/2 sm:w-auto">Time</th>
+                                <th class="py-3 px-2 sm:px-4 text-right font-bold">Pontos</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
@@ -576,23 +576,24 @@
 
                 return `
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                        <td class="py-3 px-3 sm:px-4 text-center w-12 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
-                            <img src="${item.escudo}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800">
-                            <div>
-                                <div class="font-bold text-gray-800 dark:text-gray-100 text-sm sm:text-base leading-tight">${item.nomeTime}</div>
-                                <div class="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5">${item.nomeCartola} <span class="font-medium text-amber-600 dark:text-amber-500 ml-1 hidden sm:inline">(${item.detalhes})</span></div>
+                        <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
+                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
+                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <div class="overflow-hidden min-w-0">
+                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
+                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+                                    ${item.nomeCartola} <span class="text-amber-600 dark:text-amber-500 font-medium ml-1">(${item.detalhes})</span>
+                                </div>
                             </div>
                         </td>
-                        <td class="py-3 px-3 sm:px-4 text-center text-red-400 dark:text-red-300 align-middle hidden md:table-cell text-sm">
+                        <td class="py-3 px-2 sm:px-4 text-center text-red-400 dark:text-red-300 align-middle hidden md:table-cell text-sm whitespace-nowrap">
                             -${formatReal(item.gasto)}
                         </td>
-                        <td class="py-3 px-3 sm:px-4 text-center text-green-500 dark:text-green-400 align-middle hidden md:table-cell text-sm">
+                        <td class="py-3 px-2 sm:px-4 text-center text-green-500 dark:text-green-400 align-middle hidden md:table-cell text-sm whitespace-nowrap">
                             ${formatReal(item.ganho)}
                         </td>
-                        <td class="py-3 px-3 sm:px-4 text-right font-bold ${saldoColor} text-base sm:text-lg align-middle">
+                        <td class="py-3 px-2 sm:px-4 text-right font-bold ${saldoColor} text-sm sm:text-lg align-middle whitespace-nowrap">
                             ${formatReal(item.saldo)}
-                            <div class="text-[10px] sm:hidden text-amber-600 dark:text-amber-500 font-medium">${item.detalhes}</div>
                         </td>
                     </tr>
                 `;
@@ -603,14 +604,14 @@
                     <p><strong>Regras:</strong> Fundo de R$ 30,00 por rodada (Custo R$ 5,00/jogador). <br class="hidden sm:block"> 🥇 1º: R$ 24,00 | 🥈 2º: R$ 6,00</p>
                 </div>
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-                    <table class="w-full text-sm text-left">
+                    <table class="w-full text-sm text-left table-fixed sm:table-auto">
                         <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] sm:text-xs border-b border-gray-200 dark:border-gray-700">
                             <tr>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold">Pos</th>
-                                <th class="py-3 px-3 sm:px-4 font-bold">Time</th>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold hidden md:table-cell">Investido</th>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold hidden md:table-cell">Prémios</th>
-                                <th class="py-3 px-3 sm:px-4 text-right font-bold">Saldo</th>
+                                <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
+                                <th class="py-3 px-2 sm:px-4 font-bold w-1/2 sm:w-auto">Time</th>
+                                <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Investido</th>
+                                <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Prémios</th>
+                                <th class="py-3 px-2 sm:px-4 text-right font-bold">Saldo</th>
                             </tr>
                         </thead>
                         <tbody>${rows}</tbody>
@@ -673,17 +674,17 @@
                 return `
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4">
-                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800">
-                            <div class="overflow-hidden">
+                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
+                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <div class="overflow-hidden min-w-0">
                                 <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
                                 <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">${item.nomeCartola}</div>
                             </div>
                         </td>
-                        <td class="py-3 px-2 sm:px-4 text-center align-middle text-sm sm:text-lg ${pontosClass}">
+                        <td class="py-3 px-2 sm:px-4 text-center align-middle text-sm sm:text-lg whitespace-nowrap ${pontosClass}">
                             ${formatPoints(item.pontos)}
                         </td>
-                        <td class="py-3 px-2 sm:px-4 text-right align-middle text-sm sm:text-lg ${patClass}">
+                        <td class="py-3 px-2 sm:px-4 text-right align-middle text-sm sm:text-lg whitespace-nowrap ${patClass}">
                             ${formatMoney(item.patrimonio)}
                         </td>
                     </tr>
@@ -709,10 +710,10 @@
                             <tr>
                                 <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
                                 <th class="py-3 px-2 sm:px-4 font-bold w-1/3 sm:w-auto">Time</th>
-                                <th class="py-3 px-2 sm:px-4 text-center font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 select-none transition-colors" onclick="toggleSort('pontos')">
+                                <th class="py-3 px-2 sm:px-4 text-center font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap" onclick="toggleSort('pontos')">
                                     <div class="flex items-center justify-center gap-1">Pontos ${pontosHeaderIcon}</div>
                                 </th>
-                                <th class="py-3 px-2 sm:px-4 text-right font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 select-none transition-colors" onclick="toggleSort('patrimonio')">
+                                <th class="py-3 px-2 sm:px-4 text-right font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap" onclick="toggleSort('patrimonio')">
                                     <div class="flex items-center justify-end gap-1">Patrimônio ${patHeaderIcon}</div>
                                 </th>
                             </tr>
