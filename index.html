@@ -682,6 +682,25 @@
                 return { label: p, data: [100, ...appData.valor[p].map(v => sum += v)], borderColor: palmeirasColors[p], tension: 0, pointRadius: 2, borderWidth: 2 };
             });
             updateChart('cumulativeCartoletasChart', { type: 'line', data: { labels: ['In.', ...labels], datasets: datasetsVal }, options: lineOpt });
+
+            // --- TELA 5: RESUMO FINANCEIRO ---
+            const dSaldo = players.map(p => ({p, v: saldo[p]})).sort((a,b)=>b.v-a.v);
+            const finList = document.getElementById('financeiroList');
+            if(finList) {
+                finList.innerHTML = '';
+                dSaldo.forEach(item => {
+                    const isPositive = item.v > 0;
+                    const isNeutral = item.v === 0;
+                    const valClass = isPositive ? 'money-positive' : (isNeutral ? '' : 'money-negative');
+                    const sign = isPositive ? '+' : (isNeutral ? '' : '-');
+                    finList.innerHTML += `
+                        <div class="finance-card">
+                            <div class="p-name">${item.p}</div>
+                            <div class="p-val ${valClass}">${sign}R$ ${Math.abs(item.v).toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+            }
         }
 
         function updateChart(id, config) {
