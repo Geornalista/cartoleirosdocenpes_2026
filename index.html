@@ -252,73 +252,15 @@
     </div>
 
     <header>
-        <button id="exportBtn" class="header-btn left" title="Compartilhar Tela">
-            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="18" cy="5" r="3" fill="currentColor"></circle>
-                <circle cx="6" cy="12" r="3" fill="currentColor"></circle>
-                <circle cx="18" cy="19" r="3" fill="currentColor"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-            </svg>
-        </button>
+        <button id="exportBtn" class="header-btn left" title="Exportar Tela">📸</button>
         <h1>Cartoleiros do Cenpes</h1>
         <button id="themeToggle" class="header-btn right" title="Mudar Tema">🌙</button>
     </header>
 
     <div class="container hidden" id="main-container">
         
-        <!-- TELA 1: Análise da Rodada -->
+        <!-- TELA 1: Resumo Financeiro -->
         <div class="tab-pane active" id="tab-0">
-            <h2 class="tab-title">Análise da Rodada</h2>
-            <div class="input-group">
-                <label>SELECIONE A RODADA</label>
-                <select id="rodadaSelect"></select>
-            </div>
-
-            <div class="card"><h3>Pontuação na Rodada</h3><div class="chart-container"><canvas id="filtroChart"></canvas></div></div>
-            <div class="card"><h3>Valorização na Rodada</h3><div class="chart-container"><canvas id="valorizacaoChart"></canvas></div></div>
-        </div>
-
-        <!-- TELA 2: Vitórias -->
-        <div class="tab-pane" id="tab-1">
-            <h2 class="tab-title">Vitórias</h2>
-            <div class="card"><h3>Vitórias</h3><div class="chart-container"><canvas id="vitoriasChart"></canvas></div></div>
-            <div class="card"><h3>2º Lugares</h3><div class="chart-container"><canvas id="segundosChart"></canvas></div></div>
-            <div class="card"><h3>Lanternas</h3><div class="chart-container"><canvas id="lanternasChart"></canvas></div></div>
-        </div>
-
-        <!-- TELA 3: Classificação -->
-        <div class="tab-pane" id="tab-2">
-            <h2 class="tab-title">Classificação Mensal</h2>
-            <div class="card">
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <div style="flex:1">
-                        <label>RODADAS</label>
-                        <select id="rodadasMensaisSelect"></select>
-                    </div>
-                    <div style="flex:1">
-                        <label>MÊS</label>
-                        <select id="mesSelect">
-                            <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
-                            <option>Abril</option><option>Maio</option><option>Junho</option>
-                            <option>Julho</option><option>Agosto</option><option>Setembro</option>
-                            <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="chart-container"><canvas id="classificacaoMensalChart"></canvas></div>
-            </div>
-        </div>
-
-        <!-- TELA 4: Evolução -->
-        <div class="tab-pane" id="tab-3">
-            <h2 class="tab-title">Evolução Acumulada</h2>
-            <div class="card"><h3>Pontos Acumulados</h3><div class="chart-container"><canvas id="cumulativeScoreChart"></canvas></div></div>
-            <div class="card"><h3>Patrimônio (C$)</h3><div class="chart-container"><canvas id="cumulativeCartoletasChart"></canvas></div></div>
-        </div>
-
-        <!-- TELA 5: Resumo Financeiro -->
-        <div class="tab-pane" id="tab-4">
             <h2 class="tab-title">Resumo Financeiro</h2>
             <div class="card">
                 <h3>Saldo Atual (Acumulado R$)</h3>
@@ -348,29 +290,79 @@
             </div>
         </div>
 
+        <!-- TELA 2: Análise da Rodada -->
+        <div class="tab-pane" id="tab-1">
+            <h2 class="tab-title">Análise da Rodada</h2>
+            <div class="input-group">
+                <label>SELECIONE A RODADA</label>
+                <select id="rodadaSelect"></select>
+            </div>
+
+            <div class="card"><h3>Pontuação na Rodada</h3><div class="chart-container"><canvas id="filtroChart"></canvas></div></div>
+            <div class="card"><h3>Valorização na Rodada</h3><div class="chart-container"><canvas id="valorizacaoChart"></canvas></div></div>
+        </div>
+
+        <!-- TELA 3: Frequência -->
+        <div class="tab-pane" id="tab-2">
+            <h2 class="tab-title">Frequência (Total)</h2>
+            <div class="card"><h3>Vitórias</h3><div class="chart-container"><canvas id="vitoriasChart"></canvas></div></div>
+            <div class="card"><h3>2º Lugares</h3><div class="chart-container"><canvas id="segundosChart"></canvas></div></div>
+            <div class="card"><h3>Lanternas</h3><div class="chart-container"><canvas id="lanternasChart"></canvas></div></div>
+        </div>
+
+        <!-- TELA 4: Classificação -->
+        <div class="tab-pane" id="tab-3">
+            <h2 class="tab-title">Classificação Mensal</h2>
+            <div class="card">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex:1">
+                        <label>RODADAS</label>
+                        <select id="rodadasMensaisSelect"></select>
+                    </div>
+                    <div style="flex:1">
+                        <label>MÊS</label>
+                        <select id="mesSelect">
+                            <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+                            <option>Abril</option><option>Maio</option><option>Junho</option>
+                            <option>Julho</option><option>Agosto</option><option>Setembro</option>
+                            <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="chart-container"><canvas id="classificacaoMensalChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- TELA 5: Evolução -->
+        <div class="tab-pane" id="tab-4">
+            <h2 class="tab-title">Evolução Acumulada</h2>
+            <div class="card"><h3>Pontos Acumulados</h3><div class="chart-container"><canvas id="cumulativeScoreChart"></canvas></div></div>
+            <div class="card"><h3>Patrimônio (C$)</h3><div class="chart-container"><canvas id="cumulativeCartoletasChart"></canvas></div></div>
+        </div>
+
     </div>
 
     <!-- Navegação Inferior -->
     <nav class="bottom-nav hidden" id="bottom-nav">
         <div class="nav-item active" onclick="switchTab(0)">
+            <span class="nav-icon">💰</span>
+            <span>Finanças</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(1)">
             <span class="nav-icon">📊</span>
             <span>Rodada</span>
         </div>
-        <div class="nav-item" onclick="switchTab(1)">
-            <span class="nav-icon">🏆</span>
-            <span>Vitórias</span>
-        </div>
         <div class="nav-item" onclick="switchTab(2)">
+            <span class="nav-icon">🏆</span>
+            <span>Frequência</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(3)">
             <span class="nav-icon">📅</span>
             <span>Ranking</span>
         </div>
-        <div class="nav-item" onclick="switchTab(3)">
+        <div class="nav-item" onclick="switchTab(4)">
             <span class="nav-icon">📈</span>
             <span>Evolução</span>
-        </div>
-        <div class="nav-item" onclick="switchTab(4)">
-            <span class="nav-icon">💰</span>
-            <span>Finanças</span>
         </div>
     </nav>
 
@@ -539,10 +531,6 @@
                     indexAxis: 'y', 
                     responsive: true,
                     maintainAspectRatio: false,
-                    // Garante que existe espaço extra do lado direito para os rótulos não cortarem dentro do quadro
-                    layout: {
-                        padding: { right: 40, left: 10 }
-                    },
                     plugins: { 
                         legend: { display: false },
                         datalabels: { 
@@ -607,14 +595,33 @@
                 losers.forEach(l => lan[l.p]++);
             }
 
-            // --- TELA 1: RODADA SELECIONADA ---
+            // --- TELA 1: RESUMO FINANCEIRO ---
+            const dSaldo = players.map(p => ({p, v: saldo[p]})).sort((a,b)=>b.v-a.v);
+            const finList = document.getElementById('financeiroList');
+            if(finList) {
+                finList.innerHTML = '';
+                dSaldo.forEach(item => {
+                    const isPositive = item.v > 0;
+                    const isNeutral = item.v === 0;
+                    const valClass = isPositive ? 'money-positive' : (isNeutral ? '' : 'money-negative');
+                    const sign = isPositive ? '+' : (isNeutral ? '' : '-');
+                    finList.innerHTML += `
+                        <div class="finance-card">
+                            <div class="p-name">${item.p}</div>
+                            <div class="p-val ${valClass}">${sign}R$ ${Math.abs(item.v).toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            // --- TELA 2: RODADA SELECIONADA ---
             const pR = players.map(p => ({p, v: appData.pontos[p][rIdx]})).sort((a,b) => b.v - a.v);
             updateChart('filtroChart', getBarConfig('', pR.map(x=>x.p), pR.map(x=>x.v), '#2ecc71'));
             
             const vR = players.map(p => ({p, v: appData.valor[p][rIdx]})).sort((a,b) => b.v - a.v);
             updateChart('valorizacaoChart', getBarConfig('', vR.map(x=>x.p), vR.map(x=>x.v), '#e74c3c'));
 
-            // --- TELA 2: VITÓRIAS ---
+            // --- TELA 3: FREQUÊNCIAS ---
             const dVit = players.map(p => ({p, v: vit[p]})).sort((a,b)=>b.v-a.v);
             const dSeg = players.map(p => ({p, v: seg[p]})).sort((a,b)=>b.v-a.v);
             const dLan = players.map(p => ({p, v: lan[p]})).sort((a,b)=>b.v-a.v);
@@ -623,7 +630,7 @@
             updateChart('segundosChart', getBarConfig('', dSeg.map(x=>x.p), dSeg.map(x=>x.v), '#3498db', false, true));
             updateChart('lanternasChart', getBarConfig('', dLan.map(x=>x.p), dLan.map(x=>x.v), '#e74c3c', false, true));
 
-            // --- TELA 3: CLASSIFICAÇÃO MENSAL ---
+            // --- TELA 4: CLASSIFICAÇÃO MENSAL ---
             const nRodadas = parseInt(document.getElementById('rodadasMensaisSelect').value);
             const mesSel = document.getElementById('mesSelect').value;
             const classif = players.map(p => {
@@ -634,13 +641,11 @@
             }).sort((a,b) => b.v - a.v);
             updateChart('classificacaoMensalChart', getBarConfig(`${mesSel}`, classif.map(x=>x.p), classif.map(x=>x.v), '#9b59b6'));
 
-            // --- TELA 4: EVOLUÇÃO ---
+            // --- TELA 5: EVOLUÇÃO ---
             const palmeirasColors = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#34495e', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
             const lineOpt = { 
                 responsive: true, 
                 maintainAspectRatio: false,
-                // Margem interna de segurança pros gráficos de linha não encostarem nas extremidades
-                layout: { padding: { right: 20, top: 10, left: 10, bottom: 10 } },
                 plugins: { 
                     legend: { labels: { color: c.text, boxWidth: 10, font: { size: 10 } } }, 
                     datalabels: { display: false },
@@ -712,30 +717,21 @@
             });
         }
 
-        // --- LÓGICA DE EXPORTAÇÃO DE IMAGEM (COMPARTILHAMENTO NATIVO) ---
-        // Função auxiliar para transformar o canvas em Blob (arquivo virtual)
-        const getCanvasBlob = (canvas) => {
-            return new Promise((resolve) => {
-                canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.95);
-            });
-        };
-
+        // --- LÓGICA DE EXPORTAÇÃO DE IMAGEM ---
         document.getElementById('exportBtn').addEventListener('click', async () => {
             const btn = document.getElementById('exportBtn');
-            const originalIcon = btn.innerHTML;
+            const originalIcon = btn.innerText;
             btn.innerText = '⏳'; // Muda o ícone temporariamente para mostrar que está processando
             
             // Delay ligeiramente maior para garantir que gráficos terminaram de renderizar
             await new Promise(resolve => setTimeout(resolve, 400));
             
             try {
+                // Encontra a aba (tela) que está ativa no momento
                 const activeTab = document.querySelector('.tab-pane.active');
-                const bgColor = window.getComputedStyle(document.body).backgroundColor;
                 
-                // Pega o título da aba ativa limpo
-                const rawTitle = activeTab.querySelector('.tab-title').innerText;
-                const tabTitle = rawTitle.normalize('NFD').replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_').toLowerCase();
-                const fileName = `cartoleiros_cenpes_${tabTitle}.jpg`;
+                // Captura a cor de fundo atual (tema claro ou escuro) para garantir uma imagem perfeita
+                const bgColor = window.getComputedStyle(document.body).backgroundColor;
                 
                 // Gera o print
                 const canvas = await html2canvas(activeTab, {
@@ -744,48 +740,44 @@
                     useCORS: true,
                     logging: false,
                     onclone: (clonedDoc) => {
+                        // Garante que o tema (claro/escuro) seja copiado
                         if (document.body.classList.contains('dark-mode')) {
                             clonedDoc.body.classList.add('dark-mode');
                         }
+                        
                         const clonedTab = clonedDoc.querySelector('.tab-pane.active');
+                        
+                        // CRÍTICO: Desliga a animação no momento do print!
+                        // Isso impede que a imagem saia transparente/lavada.
                         clonedTab.style.animation = 'none';
                         clonedTab.style.opacity = '1';
-                        // Aumentei o padding consideravelmente para criar uma moldura segura de cor sólida em volta
-                        clonedTab.style.padding = '40px'; 
+                        
+                        // Ajuste visual
+                        clonedTab.style.padding = '20px';
                         clonedTab.style.backgroundColor = bgColor;
                     }
                 });
                 
-                // 1. Converte o canvas para um Arquivo (Blob)
-                const blob = await getCanvasBlob(canvas);
+                // Converte em arquivo JPG
+                const image = canvas.toDataURL("image/jpeg", 0.95);
                 
-                if (!blob) throw new Error("Falha ao gerar o arquivo de imagem");
+                // Pega o título da aba para nomear o arquivo (ex: "resumo_financeiro")
+                const tabTitle = activeTab.querySelector('.tab-title').innerText
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                    .replace(/\s+/g, '_').toLowerCase();
                 
-                const file = new File([blob], fileName, { type: "image/jpeg" });
-
-                // 2. Verifica se o navegador/celular suporta compartilhar arquivos
-                if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                    // Se suportar, abre a gaveta de compartilhamento nativa (WhatsApp, Instagram, etc)
-                    await navigator.share({
-                        files: [file],
-                        title: 'Cartoleiros do Cenpes',
-                        text: `Confira as estatísticas: ${rawTitle}!`
-                    });
-                } else {
-                    // 3. Fallback: Se não suportar (ex: Computador), baixa a imagem tradicionalmente
-                    const link = document.createElement('a');
-                    link.download = fileName;
-                    link.href = URL.createObjectURL(blob);
-                    link.click();
-                    URL.revokeObjectURL(link.href); // Limpa da memória
-                }
+                // Força o download no dispositivo
+                const link = document.createElement('a');
+                link.download = `cartoleiros_cenpes_${tabTitle}.jpg`;
+                link.href = image;
+                link.click();
                 
             } catch (err) {
-                // Se der erro, ou se o usuário cancelar a tela de compartilhamento
-                console.log("Ação interrompida ou com erro:", err);
+                console.error("Erro ao exportar a tela:", err);
+                alert("Houve um pequeno erro ao gerar a imagem. Tente novamente.");
             } finally {
                 // Volta o botão ao normal
-                btn.innerHTML = originalIcon;
+                btn.innerText = originalIcon;
             }
         });
 
