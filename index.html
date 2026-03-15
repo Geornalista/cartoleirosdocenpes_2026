@@ -100,7 +100,7 @@
         <!-- Área de Loading -->
         <div id="loading" class="py-20 text-center">
             <div class="loader mb-4"></div>
-            <p class="text-gray-600 dark:text-gray-400 font-medium animate-pulse">Buscando dados na API do Cartola...</p>
+            <p id="loading-text" class="text-gray-600 dark:text-gray-400 font-medium animate-pulse">Buscando dados na API do Cartola...</p>
         </div>
 
         <!-- Navegação por Abas (Oculta por padrão até carregar) -->
@@ -187,13 +187,6 @@
             return `${sign}R$ ${absValue.toFixed(2).replace('.', ',')}`;
         };
 
-        // Helper para contornar problemas de CORS com as imagens ao salvar no Canvas
-        const getProxyImageUrl = (url) => {
-            if (!url) return 'https://via.placeholder.com/150';
-            if (url.includes('corsproxy')) return url;
-            return `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        };
-
         // Variáveis globais
         let appData = [];
         let maxRound = 1;
@@ -239,27 +232,25 @@
                 const isDark = document.documentElement.classList.contains('dark');
                 const bgColor = isDark ? '#111827' : '#f3f4f6'; // bg-gray-900 ou bg-gray-100
 
-                // *** HACK DE LAYOUT PARA MOBILE ***
-                // Guarda o estado original do elemento
-                const originalCssText = activeView.style.cssText;
-                
-                // Força o container a ter o tamanho de um monitor de computador (800px) e desativa limitações
-                // Isso evita o bug do html2canvas de cortar texto ou espremer colunas "flex" em celulares
-                activeView.style.width = '800px';
-                activeView.style.maxWidth = 'none';
-                activeView.style.padding = '20px'; // Adiciona margem de respiro para a imagem gerada
+                // Retirado o hack que forçava largura 800px. Deixamos o html2canvas capturar a naturalidade do mobile.
+                const tableContainer = activeView.querySelector('.overflow-x-auto');
+                const originalOverflow = tableContainer ? tableContainer.style.overflow : '';
+                if(tableContainer) {
+                    tableContainer.style.overflow = 'visible';
+                }
 
-                // Captura o painel com largura fixa simulando desktop
+                // Captura o painel
                 const canvas = await html2canvas(activeView, {
                     backgroundColor: bgColor,
                     scale: 2, // Maior qualidade (retina)
-                    useCORS: true, // Essencial para renderizar os escudos
-                    width: 800, // Força a largura do canvas final
-                    windowWidth: 800 // Engana o CSS para renderizar na versão de computador (revela colunas ocultas no mobile)
+                    useCORS: true,
+                    width: activeView.scrollWidth // Garante que se houver overflow horizontal ele captura tudo
                 });
 
                 // Restaura a interface ao normal do celular imediatamente
-                activeView.style.cssText = originalCssText;
+                if(tableContainer) {
+                    tableContainer.style.overflow = originalOverflow;
+                }
                 activeView.removeChild(titleEl);
 
                 // Converte para blob e tenta partilhar nativamente (WhatsApp, etc)
@@ -294,6 +285,35 @@
             }
         }
 
+        // Função para baixar a imagem como Base64 para evitar 100% dos erros de CORS no html2canvas
+        async function fetchImageAsBase64(url) {
+            if (!url) return 'https://via.placeholder.com/150';
+            
+            const proxies = [
+                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+                `https://api.codetabs.com/v1/proxy?quest=${url}`,
+                `https://corsproxy.io/?${encodeURIComponent(url)}`
+            ];
+
+            for (const proxy of proxies) {
+                try {
+                    const response = await fetch(proxy);
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        return await new Promise((resolve, reject) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Falha no proxy de imagem:', proxy);
+                }
+            }
+            return 'https://via.placeholder.com/150'; // Fallback visual se os proxies bloquearem
+        }
+
         // Função para buscar a rodada atual da API dinamicamente
         async function fetchCurrentRound() {
             const apiUrl = 'https://api.cartola.globo.com/mercado/status';
@@ -311,22 +331,14 @@
                         if (data && data.rodada_atual) {
                             let rodada = data.rodada_atual;
                             
-                            // Regra solicitada: Considerar a rodada atual apenas se o mercado estiver aberto.
                             if (data.status_mercado === 2) {
                                 rodada = rodada - 1;
-                                console.log(`Mercado fechado. A exibir dados consolidados até à rodada: ${rodada}`);
-                            } else {
-                                console.log(`Mercado aberto. A exibir dados até à rodada: ${rodada}`);
                             }
-                            
                             return Math.max(1, rodada);
                         }
                     }
-                } catch (error) {
-                    console.warn(`Proxy falhou ao buscar status da rodada: ${proxyUrl}`);
-                }
+                } catch (error) {}
             }
-            console.warn("Não foi possível detetar a rodada dinamicamente. A usar a rodada 6.");
             return 6;
         }
 
@@ -351,9 +363,7 @@
                             return cartolaData;
                         }
                     }
-                } catch (error) {
-                    // ignora e tenta o proximo
-                }
+                } catch (error) {}
             }
             throw new Error(`Falha na rodada ${rodada}.`);
         }
@@ -391,6 +401,7 @@
             const viewsEl = document.getElementById('views-container');
             const errorEl = document.getElementById('error-message');
             const errorTextEl = document.getElementById('error-text');
+            const loadingText = document.getElementById('loading-text');
 
             loadingEl.classList.remove('hidden');
             tabsEl.classList.add('hidden');
@@ -398,8 +409,7 @@
             errorEl.classList.add('hidden');
 
             try {
-                const loadingText = loadingEl.querySelector('p');
-                loadingText.textContent = "A verificar a rodada atual no mercado...";
+                loadingText.textContent = "Verificando rodada atual no mercado...";
                 const rodadaAtual = await fetchCurrentRound();
                 
                 loadingText.textContent = `A buscar dados até à rodada ${rodadaAtual}...`;
@@ -408,14 +418,18 @@
                 const resultados = await Promise.allSettled(fetchPromises);
                 
                 const sucessos = resultados.filter(r => r.status === 'fulfilled').map(r => r.value);
-                const falhas = resultados.filter(r => r.status === 'rejected');
-
+                
                 if (sucessos.length === 0) {
                     throw new Error("Não foi possível aceder à API do Cartola no momento devido a bloqueios de segurança (CORS). Tente novamente mais tarde.");
                 }
 
-                if (falhas.length > 0) {
-                    console.warn(`${falhas.length} jogador(es) não puderam ser carregados.`);
+                // Processo crítico: Fazer download das imagens como Base64 para garantir a partilha no WhatsApp
+                loadingText.textContent = `A carregar escudos dos times...`;
+                for (let player of sucessos) {
+                    const latest = player.history.filter(h => !h.error).pop()?.data;
+                    // Priorizamos PNG ao invés de SVG pois o html2canvas lida melhor com eles
+                    const rawEscudo = latest?.time?.url_escudo_png || 'https://via.placeholder.com/150';
+                    player.escudoBase64 = await fetchImageAsBase64(rawEscudo);
                 }
                 
                 appData = sucessos;
@@ -474,12 +488,10 @@
                 const roundData = player.history.find(h => h.rodada === rodada && !h.error)?.data;
                 const latest = player.history.filter(h => !h.error).pop()?.data; 
                 
-                const rawEscudo = roundData?.time?.url_escudo_png || roundData?.time?.url_escudo_svg || latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg;
-                
                 return {
                     nomeTime: roundData?.time?.nome || latest?.time?.nome || 'Desconhecido',
                     nomeCartola: roundData?.time?.nome_cartola || latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: getProxyImageUrl(rawEscudo),
+                    escudo: player.escudoBase64, // Utiliza a imagem já guardada em memória!
                     value: roundData?.pontos || 0
                 };
             }).sort((a, b) => b.value - a.value);
@@ -494,11 +506,11 @@
                 return `
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
-                            <img crossorigin="anonymous" src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
-                            <div class="overflow-hidden min-w-0">
-                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
-                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">${item.nomeCartola}</div>
+                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4">
+                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <div>
+                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight break-words">${item.nomeTime}</div>
+                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words">${item.nomeCartola}</div>
                             </div>
                         </td>
                         <td class="py-3 px-2 sm:px-4 text-right font-bold text-blue-600 dark:text-blue-400 text-sm sm:text-lg align-middle whitespace-nowrap">
@@ -510,11 +522,11 @@
             
             document.getElementById('ranking-rodada-container').innerHTML = `
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-                    <table class="w-full text-sm text-left table-fixed sm:table-auto">
+                    <table class="w-full text-sm text-left table-auto">
                         <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] sm:text-xs border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
-                                <th class="py-3 px-2 sm:px-4 font-bold w-1/2 sm:w-auto">Time</th>
+                                <th class="py-3 px-2 sm:px-4 font-bold">Time</th>
                                 <th class="py-3 px-2 sm:px-4 text-right font-bold">Pontos</th>
                             </tr>
                         </thead>
@@ -536,7 +548,8 @@
                     totalGasto: 0,
                     vitorias: 0,
                     segundos: 0,
-                    latestData: player.history.filter(h => !h.error).pop()?.data
+                    latestData: player.history.filter(h => !h.error).pop()?.data,
+                    escudoBase64: player.escudoBase64
                 };
             });
 
@@ -564,12 +577,11 @@
 
             const mapped = Object.values(premios).map(p => {
                 const saldoLiquido = p.totalGanho - p.totalGasto;
-                const rawEscudo = p.latestData?.time?.url_escudo_png || p.latestData?.time?.url_escudo_svg;
                 
                 return {
                     nomeTime: p.latestData?.time?.nome || 'Desconhecido',
                     nomeCartola: p.latestData?.time?.nome_cartola || p.nomeOriginal,
-                    escudo: getProxyImageUrl(rawEscudo),
+                    escudo: p.escudoBase64,
                     ganho: p.totalGanho,
                     gasto: p.totalGasto,
                     saldo: saldoLiquido,
@@ -591,12 +603,12 @@
                 return `
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
-                            <img crossorigin="anonymous" src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
-                            <div class="overflow-hidden min-w-0">
-                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
-                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
-                                    ${item.nomeCartola} <span class="text-amber-600 dark:text-amber-500 font-medium ml-1">(${item.detalhes})</span>
+                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4">
+                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <div>
+                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight break-words">${item.nomeTime}</div>
+                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words">
+                                    ${item.nomeCartola} <span class="text-amber-600 dark:text-amber-500 font-medium ml-1 block sm:inline">(${item.detalhes})</span>
                                 </div>
                             </div>
                         </td>
@@ -618,11 +630,11 @@
                     <p><strong>Regras:</strong> Fundo de R$ 30,00 por rodada (Custo R$ 5,00/jogador). <br class="hidden sm:block"> 🥇 1º: R$ 24,00 | 🥈 2º: R$ 6,00</p>
                 </div>
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-                    <table class="w-full text-sm text-left table-fixed sm:table-auto">
+                    <table class="w-full text-sm text-left table-auto">
                         <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] sm:text-xs border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
-                                <th class="py-3 px-2 sm:px-4 font-bold w-1/2 sm:w-auto">Time</th>
+                                <th class="py-3 px-2 sm:px-4 font-bold">Time</th>
                                 <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Investido</th>
                                 <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Prémios</th>
                                 <th class="py-3 px-2 sm:px-4 text-right font-bold">Saldo</th>
@@ -651,12 +663,11 @@
             // Prepara os dados
             const mapped = appData.map(player => {
                 const latest = player.history.filter(h => !h.error).pop()?.data;
-                const rawEscudo = latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg;
                 
                 return {
                     nomeTime: latest?.time?.nome || 'Desconhecido',
                     nomeCartola: latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: getProxyImageUrl(rawEscudo),
+                    escudo: player.escudoBase64,
                     pontos: latest?.pontos_campeonato || 0,
                     patrimonio: latest?.patrimonio || 0
                 };
@@ -690,11 +701,11 @@
                 return `
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
-                            <img crossorigin="anonymous" src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
-                            <div class="overflow-hidden min-w-0">
-                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
-                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">${item.nomeCartola}</div>
+                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4">
+                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <div>
+                                <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight break-words">${item.nomeTime}</div>
+                                <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words">${item.nomeCartola}</div>
                             </div>
                         </td>
                         <td class="py-3 px-2 sm:px-4 text-center align-middle text-sm sm:text-lg whitespace-nowrap ${pontosClass}">
@@ -721,11 +732,11 @@
                     <p><i data-lucide="info" class="w-4 h-4 inline-block relative -top-0.5 mr-1"></i> Toque nos títulos das colunas para alterar a ordenação do ranking.</p>
                 </div>
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
-                    <table class="w-full text-sm text-left table-fixed sm:table-auto">
+                    <table class="w-full text-sm text-left table-auto">
                         <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] sm:text-xs border-b border-gray-200 dark:border-gray-700">
                             <tr>
                                 <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
-                                <th class="py-3 px-2 sm:px-4 font-bold w-1/3 sm:w-auto">Time</th>
+                                <th class="py-3 px-2 sm:px-4 font-bold">Time</th>
                                 <th class="py-3 px-2 sm:px-4 text-center font-bold cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 select-none transition-colors whitespace-nowrap" onclick="toggleSort('pontos')">
                                     <div class="flex items-center justify-center gap-1">Pontos ${pontosHeaderIcon}</div>
                                 </th>
