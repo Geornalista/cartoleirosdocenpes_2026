@@ -1,618 +1,768 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Nossa Liga Cartola FC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Cartoleiros do Cenpes</title>
     
-    <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ea580c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <meta name="apple-mobile-web-app-title" content="Cartoleiros do Cenpes">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="theme-color" content="#27ae60">
 
-    <!-- Tailwind CSS para estilização rápida e moderna -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons para os ícones -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <style>
+        :root {
+            --bg: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-main: #1a1a1a;
+            --text-muted: #666;
+            --border: #eeeeee;
+            --primary: #2ecc71;
+            --secondary: #3498db;
+            --danger: #e74c3c;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --header-bg: #000000;
+            --nav-bg: #ffffff;
+            --nav-active: #2ecc71;
+            --nav-inactive: #999999;
+        }
+
+        body.dark-mode {
+            --bg: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #aaaaaa;
+            --border: #333333;
+            --primary: #27ae60;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            --header-bg: #1a1a1a;
+            --nav-bg: #1a1a1a;
+            --nav-active: #27ae60;
+            --nav-inactive: #666666;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
         body {
-            background-color: #f3f4f6;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            background-color: var(--bg);
+            color: var(--text-main);
+            transition: background-color 0.3s, color 0.3s;
+            /* Espaço extra para não esconder conteúdo atrás do bottom nav */
+            padding-bottom: 80px; 
+            overflow-x: hidden;
         }
-        /* Loading spinner */
-        .loader {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #f97316; /* Laranja Cartola */
+
+        header {
+            background: var(--header-bg);
+            color: #fff;
+            padding: 20px;
+            text-align: center;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        header h1 { margin: 0; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px; }
+
+        .header-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 8px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+
+        .header-btn.left { left: 15px; }
+        .header-btn.right { right: 15px; }
+
+        .container { 
+            max-width: 600px; 
+            margin: 0 auto; 
+            padding: 0 16px; 
+            min-height: 70vh;
         }
-        /* Esconde a scrollbar das abas mas permite scroll */
-        .tabs-scroll::-webkit-scrollbar {
+        
+        .hidden { display: none !important; }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        .card h3 { margin-top: 0; font-size: 1rem; text-align: center; color: var(--text-main); }
+
+        .input-group { margin-bottom: 20px; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; display: block; }
+
+        select {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background-color: var(--card-bg);
+            color: var(--text-main);
+            font-size: 1rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+        }
+
+        table { width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden; }
+        th { background: var(--bg); color: var(--text-muted); font-size: 0.75rem; padding: 12px; text-transform: uppercase; }
+        td { padding: 14px; text-align: center; border-bottom: 1px solid var(--border); }
+
+        #loading-container {
+            position: fixed; inset: 0; background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
+        }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .money-positive { color: #2ecc71 !important; font-weight: bold; }
+        .money-negative { color: #e74c3c !important; font-weight: bold; }
+        
+        /* Grid Financeiro */
+        .finance-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .finance-card {
+            background: var(--bg);
+            padding: 15px 10px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .finance-card .p-name {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+        .finance-card .p-val {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        /* --- Estilos das Abas e Navegação --- */
+        .tab-pane {
             display: none;
+            animation: fadeIn 0.3s ease-in-out;
         }
-        .tabs-scroll {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--nav-inactive);
+            text-decoration: none;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            flex: 1;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: var(--nav-active);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+            margin-bottom: 4px;
+        }
+        
+        .tab-title {
+            font-size: 1.2rem; 
+            margin: 0 0 20px 0; 
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
         }
     </style>
 </head>
-<body class="min-h-screen pb-12">
 
-    <!-- Header -->
-    <header class="bg-orange-600 text-white shadow-md py-5 mb-6">
-        <div class="container mx-auto px-4 flex items-center justify-center gap-3">
-            <i data-lucide="trophy" class="w-7 h-7"></i>
-            <h1 class="text-2xl font-bold tracking-tight">Estatísticas da Liga</h1>
-        </div>
+<body>
+    <div id="loading-container">
+        <div class="spinner"></div>
+        <p style="font-weight: 600;">Carregando estatísticas...</p>
+    </div>
+
+    <header>
+        <button id="exportBtn" class="header-btn left" title="Exportar Tela">📸</button>
+        <h1>Cartoleiros do Cenpes</h1>
+        <button id="themeToggle" class="header-btn right" title="Mudar Tema">🌙</button>
     </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-4">
+    <div class="container hidden" id="main-container">
         
-        <!-- Área de Loading -->
-        <div id="loading" class="py-20 text-center">
-            <div class="loader mb-4"></div>
-            <p class="text-gray-600 font-medium animate-pulse">Buscando dados na API do Cartola...</p>
+        <!-- TELA 1: Resumo Financeiro -->
+        <div class="tab-pane active" id="tab-0">
+            <h2 class="tab-title">Resumo Financeiro</h2>
+            <div class="card">
+                <h3>Saldo Atual (Acumulado R$)</h3>
+                <div id="financeiroList" class="finance-grid"></div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 15px;">
+                    Custo: R$ 5/rod. | Prêmios: 1º (R$ 24) e 2º (R$ 6)
+                </p>
+            </div>
+
+            <div class="input-group">
+                <label>DESEMPENHO DO JOGADOR</label>
+                <select id="playerSelect">
+                    <option value="GEORGE">GEORGE</option>
+                    <option value="LEO">LEO</option>
+                    <option value="PAULO">PAULO</option>
+                    <option value="RAFAEL">RAFAEL</option>
+                    <option value="VITOR">VITOR</option>
+                    <option value="XINGU">XINGU</option>
+                </select>
+            </div>
+
+            <div class="card" style="padding: 0;">
+                <table id="dataTable">
+                    <thead><tr><th>Rodada</th><th>Pontos</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
 
-        <!-- Navegação por Abas (Oculta por padrão até carregar) -->
-        <div id="tabs-container" class="hidden mb-6 border-b border-gray-200">
-            <nav class="flex overflow-x-auto tabs-scroll space-x-6 pb-2 px-2" aria-label="Tabs">
-                <button onclick="changeTab('rodada')" id="tab-rodada" class="tab-btn text-orange-600 border-orange-600 border-b-2 py-2 text-sm font-bold whitespace-nowrap transition-colors flex items-center gap-1">
-                    <i data-lucide="calendar-days" class="w-4 h-4"></i> Por Rodada
-                </button>
-                <button onclick="changeTab('premiacao')" id="tab-premiacao" class="tab-btn text-gray-500 hover:text-gray-700 py-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1">
-                    <i data-lucide="banknote" class="w-4 h-4"></i> Premiação
-                </button>
-                <button onclick="changeTab('ranking')" id="tab-ranking" class="tab-btn text-gray-500 hover:text-gray-700 py-2 text-sm font-medium whitespace-nowrap transition-colors flex items-center gap-1">
-                    <i data-lucide="bar-chart-3" class="w-4 h-4"></i> Ranking
-                </button>
-            </nav>
+        <!-- TELA 2: Análise da Rodada -->
+        <div class="tab-pane" id="tab-1">
+            <h2 class="tab-title">Análise da Rodada</h2>
+            <div class="input-group">
+                <label>SELECIONE A RODADA</label>
+                <select id="rodadaSelect"></select>
+            </div>
+
+            <div class="card"><h3>Pontuação na Rodada</h3><div class="chart-container"><canvas id="filtroChart"></canvas></div></div>
+            <div class="card"><h3>Valorização na Rodada</h3><div class="chart-container"><canvas id="valorizacaoChart"></canvas></div></div>
         </div>
 
-        <!-- Conteúdo das Abas -->
-        <div id="views-container" class="hidden">
-            
-            <!-- Container Por Rodada (Aba Padrão) -->
-            <div id="view-rodada" class="view-section max-w-4xl mx-auto">
-                <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                    <label for="rodada-select" class="font-medium text-gray-700 whitespace-nowrap">Selecione a Rodada:</label>
-                    <select id="rodada-select" onchange="renderRankingRodada(this.value)" class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full sm:w-auto p-2.5 outline-none font-medium">
-                        <!-- Options preenchidas via JS -->
-                    </select>
+        <!-- TELA 3: Frequência -->
+        <div class="tab-pane" id="tab-2">
+            <h2 class="tab-title">Frequência (Total)</h2>
+            <div class="card"><h3>Vitórias</h3><div class="chart-container"><canvas id="vitoriasChart"></canvas></div></div>
+            <div class="card"><h3>2º Lugares</h3><div class="chart-container"><canvas id="segundosChart"></canvas></div></div>
+            <div class="card"><h3>Lanternas</h3><div class="chart-container"><canvas id="lanternasChart"></canvas></div></div>
+        </div>
+
+        <!-- TELA 4: Classificação -->
+        <div class="tab-pane" id="tab-3">
+            <h2 class="tab-title">Classificação Mensal</h2>
+            <div class="card">
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <div style="flex:1">
+                        <label>RODADAS</label>
+                        <select id="rodadasMensaisSelect"></select>
+                    </div>
+                    <div style="flex:1">
+                        <label>MÊS</label>
+                        <select id="mesSelect">
+                            <option>Janeiro</option><option>Fevereiro</option><option>Março</option>
+                            <option>Abril</option><option>Maio</option><option>Junho</option>
+                            <option>Julho</option><option>Agosto</option><option>Setembro</option>
+                            <option>Outubro</option><option>Novembro</option><option>Dezembro</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="ranking-rodada-container"></div>
-            </div>
-
-            <!-- Container Premiação -->
-            <div id="view-premiacao" class="view-section hidden max-w-4xl mx-auto">
-                <div id="ranking-premiacao-container"></div>
-            </div>
-
-            <!-- Container Ranking Unificado -->
-            <div id="view-ranking" class="view-section hidden max-w-4xl mx-auto">
-                <div id="ranking-geral-container"></div>
+                <div class="chart-container"><canvas id="classificacaoMensalChart"></canvas></div>
             </div>
         </div>
-        
-        <!-- Mensagem de Erro (Oculta por padrão) -->
-        <div id="error-message" class="hidden bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative max-w-2xl mx-auto mt-8 text-center" role="alert">
-            <strong class="font-bold" id="error-title">Ops! </strong>
-            <span class="block sm:inline" id="error-text">Ocorreu um erro ao carregar os dados. A API pode estar bloqueando os nossos proxies.</span>
-            <button onclick="fetchData()" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                Tentar Novamente
-            </button>
+
+        <!-- TELA 5: Evolução -->
+        <div class="tab-pane" id="tab-4">
+            <h2 class="tab-title">Evolução Acumulada</h2>
+            <div class="card"><h3>Pontos Acumulados</h3><div class="chart-container"><canvas id="cumulativeScoreChart"></canvas></div></div>
+            <div class="card"><h3>Patrimônio (C$)</h3><div class="chart-container"><canvas id="cumulativeCartoletasChart"></canvas></div></div>
         </div>
 
-    </main>
+    </div>
+
+    <!-- Navegação Inferior -->
+    <nav class="bottom-nav hidden" id="bottom-nav">
+        <div class="nav-item active" onclick="switchTab(0)">
+            <span class="nav-icon">💰</span>
+            <span>Finanças</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(1)">
+            <span class="nav-icon">📊</span>
+            <span>Rodada</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(2)">
+            <span class="nav-icon">🏆</span>
+            <span>Frequência</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(3)">
+            <span class="nav-icon">📅</span>
+            <span>Ranking</span>
+        </div>
+        <div class="nav-item" onclick="switchTab(4)">
+            <span class="nav-icon">📈</span>
+            <span>Evolução</span>
+        </div>
+    </nav>
 
     <script>
-        // Inicializa os ícones do Lucide
-        lucide.createIcons();
+        const timeIDs = { 'GEORGE': 26323967, 'XINGU': 26331075, 'LEO': 20129034, 'PAULO': 27110420, 'VITOR': 5214103, 'RAFAEL': 22004383 };
+        const players = Object.keys(timeIDs);
+        let appData = { pontos: {}, valor: {} }, ultimaRodada = 0, charts = {};
 
-        // Mapeamento dos jogadores fornecido
-        const jogadores = [
-            { nomeOriginal: 'GEORGE', id: 26323967 },
-            { nomeOriginal: 'XINGU', id: 26331075 },
-            { nomeOriginal: 'LEO', id: 20129034 },
-            { nomeOriginal: 'PAULO', id: 27110420 },
-            { nomeOriginal: 'VITOR', id: 5214103 },
-            { nomeOriginal: 'RAFAEL', id: 22004383 }
-        ];
+        // Configurações da Liga
+        const CUSTO_RODADA = 5;
+        const PREMIO_TOTAL = 30;
+        const PERCENT_1ST = 0.8;
+        const PERCENT_2ND = 0.2;
 
-        // Função para formatar moeda (Cartoletas)
-        const formatMoney = (value) => {
-            if (value === undefined || value === null) return "C$ 0.00";
-            return `C$ ${value.toFixed(2)}`;
-        };
+        const themeToggle = document.getElementById('themeToggle');
+        const body = document.body;
 
-        // Função para formatar pontos
-        const formatPoints = (value) => {
-            if (value === undefined || value === null) return "0.00";
-            return value.toFixed(2);
-        };
+        // Gestão de Temas
+        themeToggle.addEventListener('click', () => {
+            body.classList.toggle('dark-mode');
+            const isDark = body.classList.contains('dark-mode');
+            themeToggle.innerText = isDark ? '☀️' : '🌙';
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            renderizarGraficos(); 
+        });
 
-        // Formata para moeda Real (BRL), suportando negativos
-        const formatReal = (value) => {
-            const sign = value < 0 ? '-' : '';
-            const absValue = Math.abs(value);
-            return `${sign}R$ ${absValue.toFixed(2).replace('.', ',')}`;
-        };
-
-        // Variáveis globais
-        let appData = [];
-        let maxRound = 1;
-
-        // Estado da ordenação da aba Ranking
-        let rankingSortConfig = {
-            column: 'pontos', // 'pontos' ou 'patrimonio'
-            direction: 'desc' // 'desc' (maior para menor) ou 'asc' (menor para maior)
-        };
-
-        // Função para buscar a rodada atual da API dinamicamente
-        async function fetchCurrentRound() {
-            const apiUrl = 'https://api.cartola.globo.com/mercado/status';
-            const proxies = [
-                `https://api.codetabs.com/v1/proxy?quest=${apiUrl}`,
-                `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`
-            ];
-
-            for (const proxyUrl of proxies) {
-                try {
-                    const response = await fetch(proxyUrl, { cache: "no-store" });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data && data.rodada_atual) {
-                            let rodada = data.rodada_atual;
-                            
-                            // Regra solicitada: Considerar a rodada atual apenas se o mercado estiver aberto.
-                            if (data.status_mercado === 2) {
-                                rodada = rodada - 1;
-                                console.log(`Mercado fechado. A exibir dados consolidados até à rodada: ${rodada}`);
-                            } else {
-                                console.log(`Mercado aberto. A exibir dados até à rodada: ${rodada}`);
-                            }
-                            
-                            return Math.max(1, rodada);
-                        }
-                    }
-                } catch (error) {
-                    console.warn(`Proxy falhou ao buscar status da rodada: ${proxyUrl}`);
-                }
-            }
-            console.warn("Não foi possível detetar a rodada dinamicamente. A usar a rodada 6.");
-            return 6;
+        if (localStorage.getItem('theme') === 'dark') {
+            body.classList.add('dark-mode');
+            themeToggle.innerText = '☀️';
         }
 
-        // Função para buscar dados de um jogador por rodada
-        async function fetchCartolaData(id, rodada, isCurrent = false) {
-            const apiUrl = isCurrent 
-                ? `https://api.cartola.globo.com/time/id/${id}`
-                : `https://api.cartola.globo.com/time/id/${id}/${rodada}`;
-            
-            const proxies = [
-                `https://api.codetabs.com/v1/proxy?quest=${apiUrl}`,
-                `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`
-            ];
+        // Lógica de Abas (Tabs)
+        let currentTab = 0;
+        const totalTabs = 5;
 
-            for (const proxyUrl of proxies) {
-                try {
-                    const response = await fetch(proxyUrl, { cache: "no-store" });
-                    if (response.ok) {
-                        const cartolaData = await response.json();
-                        if (cartolaData && cartolaData.time) {
-                            return cartolaData;
-                        }
-                    }
-                } catch (error) {
-                    // ignora e tenta o proximo
-                }
-            }
-            throw new Error(`Falha na rodada ${rodada}.`);
+        function switchTab(index) {
+            if (index < 0 || index >= totalTabs) return;
+            
+            // Atualiza botões
+            document.querySelectorAll('.nav-item').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+
+            // Atualiza painéis
+            document.querySelectorAll('.tab-pane').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+
+            currentTab = index;
+            // Garante que o resize dos gráficos aconteça quando a aba fica visível
+            window.dispatchEvent(new Event('resize'));
         }
 
-        // Busca o histórico completo de 1 até à rodada atual para um jogador
-        async function fetchPlayerHistory(jogador, rodadaAtual) {
-            const promises = [];
-            for (let r = 1; r <= rodadaAtual; r++) {
-                const isCurrent = (r === rodadaAtual);
-                promises.push(fetchCartolaData(jogador.id, r, isCurrent));
-            }
+        // Detecção de Deslizar (Swipe)
+        let touchstartX = 0;
+        let touchendX = 0;
+        let touchstartY = 0;
+        let touchendY = 0;
+
+        const container = document.getElementById('main-container');
+
+        container.addEventListener('touchstart', e => {
+            touchstartX = e.changedTouches[0].screenX;
+            touchstartY = e.changedTouches[0].screenY;
+        }, {passive: true});
+
+        container.addEventListener('touchend', e => {
+            touchendX = e.changedTouches[0].screenX;
+            touchendY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, {passive: true});
+
+        function handleSwipe() {
+            const diffX = touchendX - touchstartX;
+            const diffY = touchendY - touchstartY;
             
-            const resultados = await Promise.allSettled(promises);
-            
-            const history = resultados.map((res, index) => {
-                if (res.status === 'fulfilled') {
-                    return { rodada: index + 1, data: res.value, error: false };
+            // Só ativa o swipe se o movimento horizontal for maior que o vertical e maior que um limite (50px)
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                if (diffX < 0) {
+                    // Swipe para esquerda (Próxima aba)
+                    switchTab(Math.min(currentTab + 1, totalTabs - 1));
                 } else {
-                    return { rodada: index + 1, data: null, error: true };
+                    // Swipe para direita (Aba anterior)
+                    switchTab(Math.max(currentTab - 1, 0));
                 }
-            });
-
-            const sucessos = history.filter(h => !h.error);
-            if (sucessos.length === 0) {
-                throw new Error(`Não foi possível obter nenhuma rodada para ${jogador.nomeOriginal}`);
             }
-
-            return { ...jogador, history };
         }
 
-        // Função principal para buscar os dados de todos
-        async function fetchData() {
-            const loadingEl = document.getElementById('loading');
-            const tabsEl = document.getElementById('tabs-container');
-            const viewsEl = document.getElementById('views-container');
-            const errorEl = document.getElementById('error-message');
-            const errorTextEl = document.getElementById('error-text');
 
-            loadingEl.classList.remove('hidden');
-            tabsEl.classList.add('hidden');
-            viewsEl.classList.add('hidden');
-            errorEl.classList.add('hidden');
-
+        // Lógica Principal de Dados
+        async function iniciar() {
+            const proxy = 'https://corsproxy.io/?';
             try {
-                const loadingText = loadingEl.querySelector('p');
-                loadingText.textContent = "A verificar a rodada atual no mercado...";
-                const rodadaAtual = await fetchCurrentRound();
+                const status = await (await fetch(`${proxy}https://api.cartola.globo.com/mercado/status`)).json();
+                ultimaRodada = status.rodada_atual - 1;
                 
-                loadingText.textContent = `A buscar dados até à rodada ${rodadaAtual}...`;
-
-                const fetchPromises = jogadores.map(jogador => fetchPlayerHistory(jogador, rodadaAtual));
-                const resultados = await Promise.allSettled(fetchPromises);
-                
-                const sucessos = resultados.filter(r => r.status === 'fulfilled').map(r => r.value);
-                const falhas = resultados.filter(r => r.status === 'rejected');
-
-                if (sucessos.length === 0) {
-                    throw new Error("Não foi possível aceder à API do Cartola no momento devido a bloqueios de segurança (CORS). Tente novamente mais tarde.");
+                if (ultimaRodada <= 0) {
+                    document.getElementById('loading-container').innerHTML = "<p style='padding:20px'>Aguardando Rodada 01 para iniciar os cálculos.</p>";
+                    return;
                 }
 
-                if (falhas.length > 0) {
-                    console.warn(`${falhas.length} jogador(es) não puderam ser carregados.`);
+                players.forEach(p => { appData.pontos[p] = []; appData.valor[p] = []; });
+                let patAnt = players.reduce((acc, p) => ({ ...acc, [p]: 100 }), {});
+
+                for (let r = 1; r <= ultimaRodada; r++) {
+                    await Promise.all(players.map(async p => {
+                        try {
+                            const d = await (await fetch(`${proxy}https://api.cartola.globo.com/time/id/${timeIDs[p]}/${r}`)).json();
+                            appData.pontos[p].push(d.pontos || 0);
+                            appData.valor[p].push((d.patrimonio || patAnt[p]) - patAnt[p]);
+                            patAnt[p] = d.patrimonio || patAnt[p];
+                        } catch (e) { appData.pontos[p].push(0); appData.valor[p].push(0); }
+                    }));
                 }
-                
-                appData = sucessos;
-                maxRound = rodadaAtual;
-
-                // Renderizar abas
-                renderRankingRodadaSelector();
-                renderRankingPremiacao();
-                renderRanking();
-
-                // Atualizar UI
-                loadingEl.classList.add('hidden');
-                tabsEl.classList.remove('hidden');
-                viewsEl.classList.remove('hidden');
-                
-                lucide.createIcons();
-
-            } catch (error) {
-                console.error("Erro fatal ao buscar dados:", error);
-                errorTextEl.textContent = error.message;
-                loadingEl.classList.add('hidden');
-                errorEl.classList.remove('hidden');
+                setupUI();
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('loading-container').innerHTML = "<p style='padding:20px'>Erro ao carregar dados da API do Cartola.</p>";
             }
         }
 
-        // --- SISTEMA DE ABAS ---
-        function changeTab(tabName) {
-            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
-            
-            document.querySelectorAll('.tab-btn').forEach(el => {
-                el.classList.remove('text-orange-600', 'border-orange-600', 'border-b-2', 'font-bold');
-                el.classList.add('text-gray-500', 'font-medium');
-            });
-
-            document.getElementById(`view-${tabName}`).classList.remove('hidden');
-            const activeTab = document.getElementById(`tab-${tabName}`);
-            activeTab.classList.remove('text-gray-500', 'font-medium');
-            activeTab.classList.add('text-orange-600', 'border-orange-600', 'border-b-2', 'font-bold');
-        }
-
-        // --- ABA: POR RODADA ---
-        function renderRankingRodadaSelector() {
-            let options = '';
-            for(let r = maxRound; r >= 1; r--) {
-                options += `<option value="${r}">Rodada ${r}</option>`;
+        function setupUI() {
+            const rSel = document.getElementById('rodadaSelect');
+            const rmSel = document.getElementById('rodadasMensaisSelect');
+            for (let i = 1; i <= ultimaRodada; i++) {
+                rSel.innerHTML += `<option value="${i}">Rodada ${i}</option>`;
+                rmSel.innerHTML += `<option value="${i}">${i} Rodadas</option>`;
             }
-            const selectEl = document.getElementById('rodada-select');
-            selectEl.innerHTML = options;
-            selectEl.value = maxRound;
-            renderRankingRodada(maxRound);
+            rSel.value = rmSel.value = ultimaRodada;
+
+            document.getElementById('playerSelect').addEventListener('change', updateTable);
+            rSel.addEventListener('change', renderizarGraficos);
+            rmSel.addEventListener('change', renderizarGraficos);
+            document.getElementById('mesSelect').addEventListener('change', renderizarGraficos);
+
+            updateTable();
+            renderizarGraficos();
+            
+            // Mostra interface
+            document.getElementById('loading-container').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('hidden');
+            document.getElementById('bottom-nav').classList.remove('hidden');
         }
 
-        function renderRankingRodada(rodadaStr) {
-            const rodada = parseInt(rodadaStr);
-            const mapped = appData.map(player => {
-                const roundData = player.history.find(h => h.rodada === rodada && !h.error)?.data;
-                const latest = player.history.filter(h => !h.error).pop()?.data; 
-                
-                return {
-                    nomeTime: roundData?.time?.nome || latest?.time?.nome || 'Desconhecido',
-                    nomeCartola: roundData?.time?.nome_cartola || latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: roundData?.time?.url_escudo_png || roundData?.time?.url_escudo_svg || latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg || 'https://via.placeholder.com/150',
-                    value: roundData?.pontos || 0
-                };
-            }).sort((a, b) => b.value - a.value);
-            
-            let rows = mapped.map((item, index) => {
-                const isMedal = index < 3;
-                const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
-                const rankDisplay = isMedal 
-                    ? `<i data-lucide="medal" class="w-6 h-6 mx-auto ${medalColors[index]}"></i>` 
-                    : `<span class="font-bold text-gray-500 text-lg">${index + 1}º</span>`;
-
-                return `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td class="py-3 px-3 sm:px-4 text-center w-12 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
-                            <img src="${item.escudo}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 shadow-sm object-contain bg-white">
-                            <div>
-                                <div class="font-bold text-gray-800 text-sm sm:text-base leading-tight">${item.nomeTime}</div>
-                                <div class="text-[11px] sm:text-xs text-gray-500 mt-0.5">${item.nomeCartola}</div>
-                            </div>
-                        </td>
-                        <td class="py-3 px-3 sm:px-4 text-right font-bold text-blue-600 text-base sm:text-lg align-middle">
-                            ${formatPoints(item.value)}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            
-            document.getElementById('ranking-rodada-container').innerHTML = `
-                <div class="overflow-x-auto bg-white rounded-xl shadow-md border border-gray-100">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-xs border-b border-gray-200">
-                            <tr>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold">Pos</th>
-                                <th class="py-3 px-3 sm:px-4 font-bold">Time</th>
-                                <th class="py-3 px-3 sm:px-4 text-right font-bold">Pontos</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            `;
-            lucide.createIcons();
+        function updateTable() {
+            const p = document.getElementById('playerSelect').value;
+            const tbody = document.querySelector('#dataTable tbody');
+            tbody.innerHTML = appData.pontos[p].map((pts, i) => `<tr><td>R${i+1}</td><td><b>${pts.toFixed(2)}</b></td></tr>`).reverse().join('');
         }
 
-        // --- ABA: PREMIAÇÃO ---
-        function renderRankingPremiacao() {
-            const premios = {};
-            appData.forEach(player => {
-                premios[player.id] = {
-                    nomeOriginal: player.nomeOriginal,
-                    id: player.id,
-                    totalGanho: 0,
-                    totalGasto: 0,
-                    vitorias: 0,
-                    segundos: 0,
-                    latestData: player.history.filter(h => !h.error).pop()?.data
-                };
-            });
+        function getChartColors() {
+            const isDark = body.classList.contains('dark-mode');
+            return {
+                text: isDark ? '#aaaaaa' : '#666666',
+                grid: isDark ? '#333333' : '#eeeeee',
+                mainText: isDark ? '#e0e0e0' : '#1a1a1a'
+            };
+        }
 
-            for (let r = 1; r <= maxRound; r++) {
-                const roundResults = [];
-                appData.forEach(player => {
-                    const roundData = player.history.find(h => h.rodada === r && !h.error)?.data;
-                    if (roundData && roundData.pontos !== undefined) {
-                        roundResults.push({ id: player.id, pontos: roundData.pontos });
-                        premios[player.id].totalGasto += 5.00;
+        function getBarConfig(label, labels, data, color, isCurrency = false, isInt = false) {
+            const c = getChartColors();
+            return {
+                type: 'bar',
+                data: { labels, datasets: [{ data, backgroundColor: color, borderRadius: 6 }] },
+                options: {
+                    indexAxis: 'y', 
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        datalabels: { 
+                            display: true,
+                            anchor: 'end', 
+                            align: 'end', 
+                            offset: 4,
+                            color: c.mainText, 
+                            font: { weight: 'bold', size: 11 }, 
+                            formatter: v => {
+                                if (isCurrency) return 'R$ ' + v.toFixed(2);
+                                return isInt ? v : v.toFixed(2);
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { 
+                            display: false, 
+                            beginAtZero: true,
+                            grace: '20%' 
+                        },
+                        y: { grid: { display: false }, ticks: { color: c.text, font: { size: 11, weight: '600' } } }
                     }
+                }
+            };
+        }
+
+        function renderizarGraficos() {
+            Chart.register(ChartDataLabels);
+            const rIdx = document.getElementById('rodadaSelect').value - 1;
+            const c = getChartColors();
+
+            // 1. Cálculos Financeiros e Frequência
+            let vit = {}, seg = {}, lan = {}, saldo = {};
+            players.forEach(p => { vit[p] = 0; seg[p] = 0; lan[p] = 0; saldo[p] = 0; });
+
+            for (let i = 0; i < ultimaRodada; i++) {
+                let r = players.map(p => ({p, v: appData.pontos[p][i]})).sort((a,b)=>b.v-a.v);
+                
+                players.forEach(p => saldo[p] -= CUSTO_RODADA);
+
+                const maxVal = r[0].v;
+                const winners = r.filter(x => x.v === maxVal);
+                const premio1 = (PREMIO_TOTAL * PERCENT_1ST) / winners.length;
+                winners.forEach(w => {
+                    vit[w.p]++;
+                    saldo[w.p] += premio1;
                 });
 
-                roundResults.sort((a, b) => b.pontos - a.pontos);
+                const sVal = r.find(x => x.v < maxVal)?.v;
+                if (sVal !== undefined) {
+                    const seconds = r.filter(x => x.v === sVal);
+                    const premio2 = (PREMIO_TOTAL * PERCENT_2ND) / seconds.length;
+                    seconds.forEach(s => {
+                        seg[s.p]++;
+                        saldo[s.p] += premio2;
+                    });
+                }
 
-                if (roundResults.length > 0) {
-                    premios[roundResults[0].id].totalGanho += 24.00;
-                    premios[roundResults[0].id].vitorias += 1;
-                }
-                if (roundResults.length > 1) {
-                    premios[roundResults[1].id].totalGanho += 6.00;
-                    premios[roundResults[1].id].segundos += 1;
-                }
+                const minVal = r[r.length-1].v;
+                const losers = r.filter(x => x.v === minVal);
+                losers.forEach(l => lan[l.p]++);
             }
 
-            const mapped = Object.values(premios).map(p => {
-                const saldoLiquido = p.totalGanho - p.totalGasto;
-                return {
-                    nomeTime: p.latestData?.time?.nome || 'Desconhecido',
-                    nomeCartola: p.latestData?.time?.nome_cartola || p.nomeOriginal,
-                    escudo: p.latestData?.time?.url_escudo_png || p.latestData?.time?.url_escudo_svg || 'https://via.placeholder.com/150',
-                    ganho: p.totalGanho,
-                    gasto: p.totalGasto,
-                    saldo: saldoLiquido,
-                    detalhes: `${p.vitorias}x Ouro, ${p.segundos}x Prata`
-                };
-            }).sort((a, b) => b.saldo - a.saldo);
-
-            let rows = mapped.map((item, index) => {
-                const isMedal = index < 3;
-                const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
-                const rankDisplay = isMedal 
-                    ? `<i data-lucide="medal" class="w-6 h-6 mx-auto ${medalColors[index]}"></i>` 
-                    : `<span class="font-bold text-gray-500 text-lg">${index + 1}º</span>`;
-                
-                let saldoColor = 'text-gray-600';
-                if (item.saldo > 0) saldoColor = 'text-green-600';
-                if (item.saldo < 0) saldoColor = 'text-red-500';
-
-                return `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td class="py-3 px-3 sm:px-4 text-center w-12 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-3 sm:px-4 flex items-center gap-3 sm:gap-4">
-                            <img src="${item.escudo}" class="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-gray-200 shadow-sm object-contain bg-white">
-                            <div>
-                                <div class="font-bold text-gray-800 text-sm sm:text-base leading-tight">${item.nomeTime}</div>
-                                <div class="text-[11px] sm:text-xs text-gray-500 mt-0.5">${item.nomeCartola} <span class="font-medium text-amber-600 ml-1 hidden sm:inline">(${item.detalhes})</span></div>
-                            </div>
-                        </td>
-                        <td class="py-3 px-3 sm:px-4 text-center text-red-400 align-middle hidden md:table-cell text-sm">
-                            -${formatReal(item.gasto)}
-                        </td>
-                        <td class="py-3 px-3 sm:px-4 text-center text-green-500 align-middle hidden md:table-cell text-sm">
-                            ${formatReal(item.ganho)}
-                        </td>
-                        <td class="py-3 px-3 sm:px-4 text-right font-bold ${saldoColor} text-base sm:text-lg align-middle">
-                            ${formatReal(item.saldo)}
-                            <div class="text-[10px] sm:hidden text-amber-600 font-medium">${item.detalhes}</div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            
-            document.getElementById('ranking-premiacao-container').innerHTML = `
-                <div class="bg-green-50 border border-green-200 text-green-800 p-3 sm:p-4 rounded-xl mb-4 text-xs sm:text-sm text-center shadow-sm">
-                    <p><strong>Regras:</strong> Fundo de R$ 30,00 por rodada (Custo R$ 5,00/jogador). <br class="hidden sm:block"> 🥇 1º: R$ 24,00 | 🥈 2º: R$ 6,00</p>
-                </div>
-                <div class="overflow-x-auto bg-white rounded-xl shadow-md border border-gray-100">
-                    <table class="w-full text-sm text-left">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] sm:text-xs border-b border-gray-200">
-                            <tr>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold">Pos</th>
-                                <th class="py-3 px-3 sm:px-4 font-bold">Time</th>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold hidden md:table-cell">Investido</th>
-                                <th class="py-3 px-3 sm:px-4 text-center font-bold hidden md:table-cell">Prémios</th>
-                                <th class="py-3 px-3 sm:px-4 text-right font-bold">Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            `;
-        }
-
-        // --- ABA: RANKING UNIFICADO (Ordenável) ---
-        function toggleSort(column) {
-            if (rankingSortConfig.column === column) {
-                // Inverte a direção se for a mesma coluna
-                rankingSortConfig.direction = rankingSortConfig.direction === 'desc' ? 'asc' : 'desc';
-            } else {
-                // Muda a coluna e define descrescente por padrão
-                rankingSortConfig.column = column;
-                rankingSortConfig.direction = 'desc';
+            // --- TELA 1: RESUMO FINANCEIRO ---
+            const dSaldo = players.map(p => ({p, v: saldo[p]})).sort((a,b)=>b.v-a.v);
+            const finList = document.getElementById('financeiroList');
+            if(finList) {
+                finList.innerHTML = '';
+                dSaldo.forEach(item => {
+                    const isPositive = item.v > 0;
+                    const isNeutral = item.v === 0;
+                    const valClass = isPositive ? 'money-positive' : (isNeutral ? '' : 'money-negative');
+                    const sign = isPositive ? '+' : (isNeutral ? '' : '-');
+                    finList.innerHTML += `
+                        <div class="finance-card">
+                            <div class="p-name">${item.p}</div>
+                            <div class="p-val ${valClass}">${sign}R$ ${Math.abs(item.v).toFixed(2)}</div>
+                        </div>
+                    `;
+                });
             }
-            renderRanking();
-        }
 
-        function renderRanking() {
-            // Prepara os dados
-            const mapped = appData.map(player => {
-                const latest = player.history.filter(h => !h.error).pop()?.data;
-                return {
-                    nomeTime: latest?.time?.nome || 'Desconhecido',
-                    nomeCartola: latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg || 'https://via.placeholder.com/150',
-                    pontos: latest?.pontos_campeonato || 0,
-                    patrimonio: latest?.patrimonio || 0
-                };
-            });
-
-            // Ordena com base no estado atual
-            mapped.sort((a, b) => {
-                let valA = a[rankingSortConfig.column];
-                let valB = b[rankingSortConfig.column];
-                
-                if (rankingSortConfig.direction === 'desc') {
-                    return valB - valA;
-                } else {
-                    return valA - valB;
-                }
-            });
-
-            // Monta as linhas
-            let rows = mapped.map((item, index) => {
-                const isMedal = index < 3 && rankingSortConfig.direction === 'desc'; // Só dá medalhas se for ordem decrescente normal
-                const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
-                const rankDisplay = isMedal 
-                    ? `<i data-lucide="medal" class="w-6 h-6 mx-auto ${medalColors[index]}"></i>` 
-                    : `<span class="font-bold text-gray-500 text-lg">${index + 1}º</span>`;
-
-                // Destaca visualmente a coluna que está sendo ordenada
-                const isSortPontos = rankingSortConfig.column === 'pontos';
-                const pontosClass = isSortPontos ? 'text-blue-700 font-extrabold' : 'text-blue-500 font-semibold';
-                const patClass = !isSortPontos ? 'text-yellow-600 font-extrabold' : 'text-yellow-500 font-semibold';
-
-                return `
-                    <tr class="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                        <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
-                        <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4">
-                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 shadow-sm object-contain bg-white">
-                            <div class="overflow-hidden">
-                                <div class="font-bold text-gray-800 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
-                                <div class="text-[10px] sm:text-xs text-gray-500 mt-0.5 truncate">${item.nomeCartola}</div>
-                            </div>
-                        </td>
-                        <td class="py-3 px-2 sm:px-4 text-center align-middle text-sm sm:text-lg ${pontosClass}">
-                            ${formatPoints(item.pontos)}
-                        </td>
-                        <td class="py-3 px-2 sm:px-4 text-right align-middle text-sm sm:text-lg ${patClass}">
-                            ${formatMoney(item.patrimonio)}
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            // Lógica para desenhar as setinhas no cabeçalho
-            const sortIcon = rankingSortConfig.direction === 'desc' ? 'arrow-down' : 'arrow-up';
+            // --- TELA 2: RODADA SELECIONADA ---
+            const pR = players.map(p => ({p, v: appData.pontos[p][rIdx]})).sort((a,b) => b.v - a.v);
+            updateChart('filtroChart', getBarConfig('', pR.map(x=>x.p), pR.map(x=>x.v), '#2ecc71'));
             
-            const pontosHeaderIcon = rankingSortConfig.column === 'pontos' 
-                ? `<i data-lucide="${sortIcon}" class="w-3 h-3 sm:w-4 sm:h-4 inline-block text-orange-600"></i>` : '';
-                
-            const patHeaderIcon = rankingSortConfig.column === 'patrimonio' 
-                ? `<i data-lucide="${sortIcon}" class="w-3 h-3 sm:w-4 sm:h-4 inline-block text-orange-600"></i>` : '';
+            const vR = players.map(p => ({p, v: appData.valor[p][rIdx]})).sort((a,b) => b.v - a.v);
+            updateChart('valorizacaoChart', getBarConfig('', vR.map(x=>x.p), vR.map(x=>x.v), '#e74c3c'));
 
-            document.getElementById('ranking-geral-container').innerHTML = `
-                <div class="bg-blue-50 border border-blue-200 text-blue-800 p-3 rounded-xl mb-4 text-xs sm:text-sm text-center shadow-sm">
-                    <p><i data-lucide="info" class="w-4 h-4 inline-block relative -top-0.5 mr-1"></i> Toque nos títulos das colunas para alterar a ordenação do ranking.</p>
-                </div>
-                <div class="overflow-x-auto bg-white rounded-xl shadow-md border border-gray-100">
-                    <table class="w-full text-sm text-left table-fixed sm:table-auto">
-                        <thead class="bg-gray-50 text-gray-600 uppercase text-[10px] sm:text-xs border-b border-gray-200">
-                            <tr>
-                                <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
-                                <th class="py-3 px-2 sm:px-4 font-bold w-1/3 sm:w-auto">Time</th>
-                                <th class="py-3 px-2 sm:px-4 text-center font-bold cursor-pointer hover:bg-gray-200 select-none transition-colors" onclick="toggleSort('pontos')">
-                                    <div class="flex items-center justify-center gap-1">Pontos ${pontosHeaderIcon}</div>
-                                </th>
-                                <th class="py-3 px-2 sm:px-4 text-right font-bold cursor-pointer hover:bg-gray-200 select-none transition-colors" onclick="toggleSort('patrimonio')">
-                                    <div class="flex items-center justify-end gap-1">Patrimônio ${patHeaderIcon}</div>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>${rows}</tbody>
-                    </table>
-                </div>
-            `;
-            lucide.createIcons();
+            // --- TELA 3: FREQUÊNCIAS ---
+            const dVit = players.map(p => ({p, v: vit[p]})).sort((a,b)=>b.v-a.v);
+            const dSeg = players.map(p => ({p, v: seg[p]})).sort((a,b)=>b.v-a.v);
+            const dLan = players.map(p => ({p, v: lan[p]})).sort((a,b)=>b.v-a.v);
+
+            updateChart('vitoriasChart', getBarConfig('', dVit.map(x=>x.p), dVit.map(x=>x.v), '#2ecc71', false, true));
+            updateChart('segundosChart', getBarConfig('', dSeg.map(x=>x.p), dSeg.map(x=>x.v), '#3498db', false, true));
+            updateChart('lanternasChart', getBarConfig('', dLan.map(x=>x.p), dLan.map(x=>x.v), '#e74c3c', false, true));
+
+            // --- TELA 4: CLASSIFICAÇÃO MENSAL ---
+            const nRodadas = parseInt(document.getElementById('rodadasMensaisSelect').value);
+            const mesSel = document.getElementById('mesSelect').value;
+            const classif = players.map(p => {
+                let total = 0;
+                const start = Math.max(0, ultimaRodada - nRodadas);
+                for (let i = start; i < ultimaRodada; i++) total += (appData.pontos[p][i] || 0);
+                return { p, v: total };
+            }).sort((a,b) => b.v - a.v);
+            updateChart('classificacaoMensalChart', getBarConfig(`${mesSel}`, classif.map(x=>x.p), classif.map(x=>x.v), '#9b59b6'));
+
+            // --- TELA 5: EVOLUÇÃO ---
+            const palmeirasColors = { GEORGE: '#2ecc71', XINGU: '#e74c3c', LEO: '#34495e', PAULO: '#d35400', VITOR: '#3498db', RAFAEL: '#f1c40f' };
+            const lineOpt = { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { 
+                    legend: { labels: { color: c.text, boxWidth: 10, font: { size: 10 } } }, 
+                    datalabels: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y.toFixed(2);
+                            }
+                        }
+                    }
+                },
+                scales: { 
+                    x: { ticks: { color: c.text, font: { size: 10 } }, grid: { display: false } },
+                    y: { 
+                        ticks: { 
+                            color: c.text, 
+                            font: { size: 10 },
+                            callback: function(value) { return value.toFixed(2); }
+                        }, 
+                        grid: { color: c.grid } 
+                    }
+                }
+            };
+
+            const labels = Array.from({length: ultimaRodada}, (_, i) => `R${i+1}`);
+            const datasetsPts = players.map(p => {
+                let sum = 0;
+                return { label: p, data: appData.pontos[p].map(v => sum += v), borderColor: palmeirasColors[p], tension: 0, pointRadius: 2, borderWidth: 2 };
+            });
+            updateChart('cumulativeScoreChart', { type: 'line', data: { labels, datasets: datasetsPts }, options: lineOpt });
+
+            const datasetsVal = players.map(p => {
+                let sum = 100;
+                return { label: p, data: [100, ...appData.valor[p].map(v => sum += v)], borderColor: palmeirasColors[p], tension: 0, pointRadius: 2, borderWidth: 2 };
+            });
+            updateChart('cumulativeCartoletasChart', { type: 'line', data: { labels: ['In.', ...labels], datasets: datasetsVal }, options: lineOpt });
         }
 
-        // Iniciar busca assim que a página carregar
-        document.addEventListener('DOMContentLoaded', fetchData);
+        function updateChart(id, config) {
+            if (charts[id]) charts[id].destroy();
+            const ctx = document.getElementById(id);
+            if (ctx) charts[id] = new Chart(ctx, config);
+        }
 
-        // Registrar o Service Worker para transformar em PWA
-        if ('serviceWorker' in navigator) {
+        if ('serviceWorker' in navigator && !window.location.href.startsWith('blob:')) {
             window.addEventListener('load', () => {
-                if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
-                    navigator.serviceWorker.register('sw.js')
-                        .then(registration => console.log('PWA Service Worker registado!'))
-                        .catch(err => console.warn('Aviso: Service Worker não registado (normal em modo preview).', err));
-                } else {
-                    console.log('Modo PWA inativo: O Service Worker requer hospedagem real (HTTP/HTTPS) para funcionar.');
-                }
+                navigator.serviceWorker.register('./service-worker.js')
+                    .then(reg => console.log('Service Worker registrado com sucesso!'))
+                    .catch(err => console.error('Erro ao registrar Service Worker:', err));
             });
         }
+
+        // --- LÓGICA DE EXPORTAÇÃO DE IMAGEM ---
+        document.getElementById('exportBtn').addEventListener('click', async () => {
+            const btn = document.getElementById('exportBtn');
+            const originalIcon = btn.innerText;
+            btn.innerText = '⏳'; // Muda o ícone temporariamente para mostrar que está processando
+            
+            // Delay ligeiramente maior para garantir que gráficos terminaram de renderizar
+            await new Promise(resolve => setTimeout(resolve, 400));
+            
+            try {
+                // Encontra a aba (tela) que está ativa no momento
+                const activeTab = document.querySelector('.tab-pane.active');
+                
+                // Captura a cor de fundo atual (tema claro ou escuro) para garantir uma imagem perfeita
+                const bgColor = window.getComputedStyle(document.body).backgroundColor;
+                
+                // Gera o print
+                const canvas = await html2canvas(activeTab, {
+                    backgroundColor: bgColor,
+                    scale: 2, // Qualidade 2x melhor
+                    useCORS: true,
+                    logging: false,
+                    onclone: (clonedDoc) => {
+                        // Garante que o tema (claro/escuro) seja copiado
+                        if (document.body.classList.contains('dark-mode')) {
+                            clonedDoc.body.classList.add('dark-mode');
+                        }
+                        
+                        const clonedTab = clonedDoc.querySelector('.tab-pane.active');
+                        
+                        // CRÍTICO: Desliga a animação no momento do print!
+                        // Isso impede que a imagem saia transparente/lavada.
+                        clonedTab.style.animation = 'none';
+                        clonedTab.style.opacity = '1';
+                        
+                        // Ajuste visual
+                        clonedTab.style.padding = '20px';
+                        clonedTab.style.backgroundColor = bgColor;
+                    }
+                });
+                
+                // Converte em arquivo JPG
+                const image = canvas.toDataURL("image/jpeg", 0.95);
+                
+                // Pega o título da aba para nomear o arquivo (ex: "resumo_financeiro")
+                const tabTitle = activeTab.querySelector('.tab-title').innerText
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                    .replace(/\s+/g, '_').toLowerCase();
+                
+                // Força o download no dispositivo
+                const link = document.createElement('a');
+                link.download = `cartoleiros_cenpes_${tabTitle}.jpg`;
+                link.href = image;
+                link.click();
+                
+            } catch (err) {
+                console.error("Erro ao exportar a tela:", err);
+                alert("Houve um pequeno erro ao gerar a imagem. Tente novamente.");
+            } finally {
+                // Volta o botão ao normal
+                btn.innerText = originalIcon;
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', iniciar);
     </script>
 </body>
 </html>
