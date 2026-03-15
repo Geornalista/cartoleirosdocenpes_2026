@@ -412,7 +412,7 @@
                 loadingText.textContent = "Verificando rodada atual no mercado...";
                 const rodadaAtual = await fetchCurrentRound();
                 
-                loadingText.textContent = `A buscar dados até à rodada ${rodadaAtual}...`;
+                loadingText.textContent = `Baixando dados até à rodada ${rodadaAtual}...`;
 
                 const fetchPromises = jogadores.map(jogador => fetchPlayerHistory(jogador, rodadaAtual));
                 const resultados = await Promise.allSettled(fetchPromises);
