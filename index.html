@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CARTOLEIROS DO CENPES</title>
+    <title>Dashboard - Nossa Liga Cartola FC</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
@@ -77,7 +77,7 @@
         <div class="container mx-auto px-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <i data-lucide="trophy" class="w-6 h-6 sm:w-7 sm:h-7"></i>
-                <h1 class="text-xl sm:text-2xl font-bold tracking-tight truncate">CARTOLEIROS DO CENPES</h1>
+                <h1 class="text-xl sm:text-2xl font-bold tracking-tight truncate">Liga Cartola FC</h1>
             </div>
             
             <div class="flex items-center gap-2">
@@ -187,6 +187,13 @@
             return `${sign}R$ ${absValue.toFixed(2).replace('.', ',')}`;
         };
 
+        // Helper para contornar problemas de CORS com as imagens ao salvar no Canvas
+        const getProxyImageUrl = (url) => {
+            if (!url) return 'https://via.placeholder.com/150';
+            if (url.includes('corsproxy')) return url;
+            return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+        };
+
         // Variáveis globais
         let appData = [];
         let maxRound = 1;
@@ -220,36 +227,39 @@
             shareBtn.innerHTML = '<div class="loader-sm"></div>';
 
             try {
-                // Remove o overflow para o html2canvas não cortar tabelas compridas no mobile
-                const tableContainer = activeView.querySelector('.overflow-x-auto');
-                const originalOverflow = tableContainer ? tableContainer.style.overflow : '';
-                if(tableContainer) {
-                    tableContainer.style.overflow = 'visible';
-                }
-
                 // Cria um título dinâmico na imagem final para dar contexto a quem recebe
                 const activeTabBtn = document.querySelector('.tab-btn.text-orange-600, .tab-btn.dark\\:text-orange-500');
                 const tabName = activeTabBtn ? activeTabBtn.innerText.trim() : 'Estatísticas';
                 
                 const titleEl = document.createElement('div');
-                titleEl.innerHTML = `<h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-4 mt-2 text-center pb-2 border-b border-gray-200 dark:border-gray-700">🏆 CARTOLEIROS DO CENPES<br><span class="text-orange-600 dark:text-orange-500 text-lg">${tabName}</span></h2>`;
+                titleEl.innerHTML = `<h2 class="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white mb-4 mt-2 text-center pb-2 border-b border-gray-200 dark:border-gray-700">🏆 Nossa Liga Cartola FC<br><span class="text-orange-600 dark:text-orange-500 text-lg">${tabName}</span></h2>`;
                 activeView.insertBefore(titleEl, activeView.firstChild);
 
                 // Configuração baseada no tema ativo
                 const isDark = document.documentElement.classList.contains('dark');
                 const bgColor = isDark ? '#111827' : '#f3f4f6'; // bg-gray-900 ou bg-gray-100
 
-                // Captura o painel
+                // *** HACK DE LAYOUT PARA MOBILE ***
+                // Guarda o estado original do elemento
+                const originalCssText = activeView.style.cssText;
+                
+                // Força o container a ter o tamanho de um monitor de computador (800px) e desativa limitações
+                // Isso evita o bug do html2canvas de cortar texto ou espremer colunas "flex" em celulares
+                activeView.style.width = '800px';
+                activeView.style.maxWidth = 'none';
+                activeView.style.padding = '20px'; // Adiciona margem de respiro para a imagem gerada
+
+                // Captura o painel com largura fixa simulando desktop
                 const canvas = await html2canvas(activeView, {
                     backgroundColor: bgColor,
-                    scale: 2, // Maior qualidade
-                    useCORS: true // Essencial para renderizar os escudos que vêm do domínio da Globo
+                    scale: 2, // Maior qualidade (retina)
+                    useCORS: true, // Essencial para renderizar os escudos
+                    width: 800, // Força a largura do canvas final
+                    windowWidth: 800 // Engana o CSS para renderizar na versão de computador (revela colunas ocultas no mobile)
                 });
 
-                // Restaura a interface ao normal
-                if(tableContainer) {
-                    tableContainer.style.overflow = originalOverflow;
-                }
+                // Restaura a interface ao normal do celular imediatamente
+                activeView.style.cssText = originalCssText;
                 activeView.removeChild(titleEl);
 
                 // Converte para blob e tenta partilhar nativamente (WhatsApp, etc)
@@ -260,7 +270,7 @@
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
                         await navigator.share({
                             files: [file],
-                            title: 'CARTOLEIROS DO CENPES',
+                            title: 'Nossa Liga Cartola FC',
                             text: `Acompanha o ${tabName} atualizado da nossa liga!`
                         });
                     } else {
@@ -464,10 +474,12 @@
                 const roundData = player.history.find(h => h.rodada === rodada && !h.error)?.data;
                 const latest = player.history.filter(h => !h.error).pop()?.data; 
                 
+                const rawEscudo = roundData?.time?.url_escudo_png || roundData?.time?.url_escudo_svg || latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg;
+                
                 return {
                     nomeTime: roundData?.time?.nome || latest?.time?.nome || 'Desconhecido',
                     nomeCartola: roundData?.time?.nome_cartola || latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: roundData?.time?.url_escudo_png || roundData?.time?.url_escudo_svg || latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg || 'https://via.placeholder.com/150',
+                    escudo: getProxyImageUrl(rawEscudo),
                     value: roundData?.pontos || 0
                 };
             }).sort((a, b) => b.value - a.value);
@@ -483,7 +495,7 @@
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
                         <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
-                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <img crossorigin="anonymous" src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
                             <div class="overflow-hidden min-w-0">
                                 <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
                                 <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">${item.nomeCartola}</div>
@@ -552,10 +564,12 @@
 
             const mapped = Object.values(premios).map(p => {
                 const saldoLiquido = p.totalGanho - p.totalGasto;
+                const rawEscudo = p.latestData?.time?.url_escudo_png || p.latestData?.time?.url_escudo_svg;
+                
                 return {
                     nomeTime: p.latestData?.time?.nome || 'Desconhecido',
                     nomeCartola: p.latestData?.time?.nome_cartola || p.nomeOriginal,
-                    escudo: p.latestData?.time?.url_escudo_png || p.latestData?.time?.url_escudo_svg || 'https://via.placeholder.com/150',
+                    escudo: getProxyImageUrl(rawEscudo),
                     ganho: p.totalGanho,
                     gasto: p.totalGasto,
                     saldo: saldoLiquido,
@@ -578,7 +592,7 @@
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
                         <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
-                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <img crossorigin="anonymous" src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
                             <div class="overflow-hidden min-w-0">
                                 <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
                                 <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
@@ -637,10 +651,12 @@
             // Prepara os dados
             const mapped = appData.map(player => {
                 const latest = player.history.filter(h => !h.error).pop()?.data;
+                const rawEscudo = latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg;
+                
                 return {
                     nomeTime: latest?.time?.nome || 'Desconhecido',
                     nomeCartola: latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: latest?.time?.url_escudo_png || latest?.time?.url_escudo_svg || 'https://via.placeholder.com/150',
+                    escudo: getProxyImageUrl(rawEscudo),
                     pontos: latest?.pontos_campeonato || 0,
                     patrimonio: latest?.patrimonio || 0
                 };
@@ -675,7 +691,7 @@
                     <tr class="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                         <td class="py-3 px-2 sm:px-4 text-center w-10 sm:w-16 align-middle">${rankDisplay}</td>
                         <td class="py-3 px-2 sm:px-4 flex items-center gap-2 sm:gap-4 overflow-hidden">
-                            <img src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
+                            <img crossorigin="anonymous" src="${item.escudo}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm object-contain bg-white dark:bg-gray-800 shrink-0">
                             <div class="overflow-hidden min-w-0">
                                 <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight truncate">${item.nomeTime}</div>
                                 <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">${item.nomeCartola}</div>
