@@ -424,7 +424,7 @@
                 }
 
                 // Processo crítico: Fazer download das imagens como Base64 para garantir a partilha no WhatsApp
-                loadingText.textContent = `A carregar escudos dos times...`;
+                loadingText.textContent = `Carregando escudos dos times...`;
                 for (let player of sucessos) {
                     const latest = player.history.filter(h => !h.error).pop()?.data;
                     // Priorizamos PNG ao invés de SVG pois o html2canvas lida melhor com eles
