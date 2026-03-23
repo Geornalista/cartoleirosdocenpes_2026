@@ -314,7 +314,7 @@
             return 'https://via.placeholder.com/150'; // Fallback visual se os proxies bloquearem
         }
 
-        // Função para buscar a rodada atual da API dinamicamente
+        // Função LÓGICA CORRIGIDA para buscar a rodada atual finalizada
         async function fetchCurrentRound() {
             const apiUrl = 'https://api.cartola.globo.com/mercado/status';
             const proxies = [
@@ -331,22 +331,31 @@
                         if (data && data.rodada_atual) {
                             let rodada = data.rodada_atual;
                             
-                            if (data.status_mercado === 2) {
+                            // Correção de Lógica:
+                            // Status 1 = Aberto (Rodada ainda vai acontecer)
+                            // Status 2 = Fechado (Rodada está a decorrer neste momento)
+                            // Se o status for 1 ou 2, a rodada atual NÃO FINALIZOU.
+                            // Para garantir dados sólidos (e evitar repetições falsas de pontuação ou parciais),
+                            // queremos sempre ir até a última rodada concluída (rodada_atual - 1).
+                            if (data.status_mercado === 1 || data.status_mercado === 2) {
                                 rodada = rodada - 1;
                             }
+                            
                             return Math.max(1, rodada);
                         }
                     }
                 } catch (error) {}
             }
-            return 6;
+            return 6; // fallback
         }
 
-        // Função para buscar dados de um jogador por rodada
-        async function fetchCartolaData(id, rodada, isCurrent = false) {
-            const apiUrl = isCurrent 
-                ? `https://api.cartola.globo.com/time/id/${id}`
-                : `https://api.cartola.globo.com/time/id/${id}/${rodada}`;
+        // Função para buscar dados de um jogador focando EXCLUSIVAMENTE na rodada específica
+        async function fetchCartolaData(id, rodada) {
+            // Removido o uso do endpoint genérico /time/id/${id}.
+            // O endpoint genérico traz a escalação do mercado aberto (futuro), o que misturava 
+            // a pontuação total antiga com um time vazio novo.
+            // Usando sempre /${rodada}, garantimos um "fotografia" exata de quando aquela rodada fechou.
+            const apiUrl = `https://api.cartola.globo.com/time/id/${id}/${rodada}`;
             
             const proxies = [
                 `https://api.codetabs.com/v1/proxy?quest=${apiUrl}`,
@@ -368,12 +377,11 @@
             throw new Error(`Falha na rodada ${rodada}.`);
         }
 
-        // Busca o histórico completo de 1 até à rodada atual para um jogador
+        // Busca o histórico completo de 1 até à última rodada finalizada
         async function fetchPlayerHistory(jogador, rodadaAtual) {
             const promises = [];
             for (let r = 1; r <= rodadaAtual; r++) {
-                const isCurrent = (r === rodadaAtual);
-                promises.push(fetchCartolaData(jogador.id, r, isCurrent));
+                promises.push(fetchCartolaData(jogador.id, r));
             }
             
             const resultados = await Promise.allSettled(promises);
@@ -409,12 +417,12 @@
             errorEl.classList.add('hidden');
 
             try {
-                loadingText.textContent = "Verificando rodada atual no mercado...";
-                const rodadaAtual = await fetchCurrentRound();
+                loadingText.textContent = "Verificando última rodada finalizada no mercado...";
+                const ultimaRodadaFinalizada = await fetchCurrentRound();
                 
-                loadingText.textContent = `Baixando dados até à rodada ${rodadaAtual}...`;
+                loadingText.textContent = `Baixando dados consolidados até à rodada ${ultimaRodadaFinalizada}...`;
 
-                const fetchPromises = jogadores.map(jogador => fetchPlayerHistory(jogador, rodadaAtual));
+                const fetchPromises = jogadores.map(jogador => fetchPlayerHistory(jogador, ultimaRodadaFinalizada));
                 const resultados = await Promise.allSettled(fetchPromises);
                 
                 const sucessos = resultados.filter(r => r.status === 'fulfilled').map(r => r.value);
@@ -427,13 +435,12 @@
                 loadingText.textContent = `Carregando escudos dos times...`;
                 for (let player of sucessos) {
                     const latest = player.history.filter(h => !h.error).pop()?.data;
-                    // Priorizamos PNG ao invés de SVG pois o html2canvas lida melhor com eles
                     const rawEscudo = latest?.time?.url_escudo_png || 'https://via.placeholder.com/150';
                     player.escudoBase64 = await fetchImageAsBase64(rawEscudo);
                 }
                 
                 appData = sucessos;
-                maxRound = rodadaAtual;
+                maxRound = ultimaRodadaFinalizada;
 
                 // Renderizar abas
                 renderRankingRodadaSelector();
@@ -491,7 +498,7 @@
                 return {
                     nomeTime: roundData?.time?.nome || latest?.time?.nome || 'Desconhecido',
                     nomeCartola: roundData?.time?.nome_cartola || latest?.time?.nome_cartola || player.nomeOriginal,
-                    escudo: player.escudoBase64, // Utiliza a imagem já guardada em memória!
+                    escudo: player.escudoBase64,
                     value: roundData?.pontos || 0
                 };
             }).sort((a, b) => b.value - a.value);
