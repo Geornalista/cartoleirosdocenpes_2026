@@ -20,7 +20,7 @@
             darkMode: 'class',
         }
         
-        // Verifica a preferência de tema antes da página carregar (evita flash branco)
+        // Verifica a preferência de tema antes de a página carregar (evita flash branco)
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
         } else {
@@ -47,7 +47,7 @@
             animation: spin 1s linear infinite;
             margin: 0 auto;
         }
-        /* Loading spinner pequeno pro botão compartilhar */
+        /* Loading spinner pequeno para o botão de partilhar */
         .loader-sm {
             border: 2px solid transparent;
             border-top: 2px solid white;
@@ -60,7 +60,7 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        /* Esconde a scrollbar das abas mas permite scroll */
+        /* Esconde a barra de scroll das abas mas permite scroll */
         .tabs-scroll::-webkit-scrollbar {
             display: none;
         }
@@ -86,7 +86,7 @@
                     <i data-lucide="moon" class="w-5 h-5 text-white hidden dark:block"></i>
                     <i data-lucide="sun" class="w-5 h-5 text-white block dark:hidden"></i>
                 </button>
-                <!-- Botão Compartilhar -->
+                <!-- Botão Partilhar -->
                 <button id="share-btn" onclick="shareScreenshot()" class="p-2 bg-orange-700/50 hover:bg-orange-700 rounded-full transition-colors" aria-label="Partilhar no WhatsApp">
                     <i data-lucide="share-2" class="w-5 h-5 text-white"></i>
                 </button>
@@ -100,7 +100,13 @@
         <!-- Área de Loading -->
         <div id="loading" class="py-20 text-center">
             <div class="loader mb-4"></div>
-            <p id="loading-text" class="text-gray-600 dark:text-gray-400 font-medium animate-pulse">Buscando dados na API do Cartola...</p>
+            <p id="loading-text" class="text-gray-600 dark:text-gray-400 font-medium animate-pulse">A carregar estatísticas atualizadas...</p>
+        </div>
+
+        <!-- Mensagem de Aviso de Mock (Oculta por padrão) -->
+        <div id="mock-warning" class="hidden bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-400 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded relative max-w-4xl mx-auto mb-4 text-sm text-center" role="alert">
+            <i data-lucide="info" class="w-4 h-4 inline-block mr-1 relative -top-0.5"></i>
+            <strong>Modo de Pré-visualização:</strong> A exibir dados fictícios para demonstração.
         </div>
 
         <!-- Navegação por Abas (Oculta por padrão até carregar) -->
@@ -126,7 +132,7 @@
                 <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <label for="rodada-select" class="font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Selecione a Rodada:</label>
                     <select id="rodada-select" onchange="renderRankingRodada(this.value)" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full sm:w-auto p-2.5 outline-none font-medium">
-                        <!-- Options preenchidas via JS -->
+                        <!-- Opções preenchidas via JS -->
                     </select>
                 </div>
                 <div id="ranking-rodada-container"></div>
@@ -146,7 +152,7 @@
         <!-- Mensagem de Erro (Oculta por padrão) -->
         <div id="error-message" class="hidden bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative max-w-2xl mx-auto mt-8 text-center" role="alert">
             <strong class="font-bold" id="error-title">Ops! </strong>
-            <span class="block sm:inline" id="error-text">Ocorreu um erro ao carregar os dados. A API pode estar bloqueando os nossos proxies.</span>
+            <span class="block sm:inline" id="error-text">Ocorreu um erro ao carregar os dados.</span>
             <button onclick="fetchData()" class="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
                 Tentar Novamente
             </button>
@@ -157,16 +163,6 @@
     <script>
         // Inicializa os ícones do Lucide
         lucide.createIcons();
-
-        // Mapeamento dos jogadores fornecido
-        const jogadores = [
-            { nomeOriginal: 'GEORGE', id: 26323967 },
-            { nomeOriginal: 'XINGU', id: 26331075 },
-            { nomeOriginal: 'LEO', id: 20129034 },
-            { nomeOriginal: 'PAULO', id: 27110420 },
-            { nomeOriginal: 'VITOR', id: 5214103 },
-            { nomeOriginal: 'RAFAEL', id: 22004383 }
-        ];
 
         // Função para formatar moeda (Cartoletas)
         const formatMoney = (value) => {
@@ -180,7 +176,7 @@
             return value.toFixed(2);
         };
 
-        // Formata para moeda Real (BRL), suportando negativos
+        // Formata para moeda Real (BRL), suportando valores negativos
         const formatReal = (value) => {
             const sign = value < 0 ? '-' : '';
             const absValue = Math.abs(value);
@@ -197,7 +193,7 @@
             direction: 'desc' // 'desc' (maior para menor) ou 'asc' (menor para maior)
         };
 
-        // Alterna entre modo claro/escuro
+        // Alterna entre o modo claro/escuro
         function toggleTheme() {
             if (document.documentElement.classList.contains('dark')) {
                 document.documentElement.classList.remove('dark');
@@ -232,7 +228,6 @@
                 const isDark = document.documentElement.classList.contains('dark');
                 const bgColor = isDark ? '#111827' : '#f3f4f6'; // bg-gray-900 ou bg-gray-100
 
-                // Retirado o hack que forçava largura 800px. Deixamos o html2canvas capturar a naturalidade do mobile.
                 const tableContainer = activeView.querySelector('.overflow-x-auto');
                 const originalOverflow = tableContainer ? tableContainer.style.overflow : '';
                 if(tableContainer) {
@@ -244,16 +239,16 @@
                     backgroundColor: bgColor,
                     scale: 2, // Maior qualidade (retina)
                     useCORS: true,
-                    width: activeView.scrollWidth // Garante que se houver overflow horizontal ele captura tudo
+                    width: activeView.scrollWidth
                 });
 
-                // Restaura a interface ao normal do celular imediatamente
+                // Restaura a interface
                 if(tableContainer) {
                     tableContainer.style.overflow = originalOverflow;
                 }
                 activeView.removeChild(titleEl);
 
-                // Converte para blob e tenta partilhar nativamente (WhatsApp, etc)
+                // Converte para blob e tenta partilhar nativamente
                 canvas.toBlob(async (blob) => {
                     const filename = `cartola-${tabName.toLowerCase().replace(/\s/g, '-')}.png`;
                     const file = new File([blob], filename, { type: 'image/png' });
@@ -262,7 +257,7 @@
                         await navigator.share({
                             files: [file],
                             title: 'Nossa Liga Cartola FC',
-                            text: `Acompanha o ${tabName} atualizado da nossa liga!`
+                            text: `Acompanha a ${tabName} atualizada da nossa liga!`
                         });
                     } else {
                         // Fallback para PC: Faz o download da imagem
@@ -277,7 +272,7 @@
 
             } catch(e) {
                 console.error('Erro ao partilhar:', e);
-                alert('Não foi possível gerar a imagem para partilhar. Verifica a tua conexão e tenta novamente.');
+                alert('Não foi possível gerar a imagem para partilhar. Verifica a tua ligação e tenta novamente.');
             } finally {
                 // Restaura o ícone de partilha
                 shareBtn.innerHTML = originalIcon;
@@ -285,131 +280,51 @@
             }
         }
 
-        // Função para baixar a imagem como Base64 para evitar 100% dos erros de CORS no html2canvas
-        async function fetchImageAsBase64(url) {
-            if (!url) return 'https://via.placeholder.com/150';
-            
-            const proxies = [
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-                `https://api.codetabs.com/v1/proxy?quest=${url}`,
-                `https://corsproxy.io/?${encodeURIComponent(url)}`
-            ];
-
-            for (const proxy of proxies) {
-                try {
-                    const response = await fetch(proxy);
-                    if (response.ok) {
-                        const blob = await response.blob();
-                        return await new Promise((resolve, reject) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => resolve(reader.result);
-                            reader.onerror = reject;
-                            reader.readAsDataURL(blob);
-                        });
+        // Função Auxiliar que gera Dados Fictícios apenas para testes no Preview (Canvas)
+        function getMockData() {
+            return {
+                maxRound: 2,
+                appData: [
+                    {
+                        id: 26323967, nomeOriginal: 'GEORGE', escudoBase64: 'https://ui-avatars.com/api/?name=GE&background=ea580c&color=fff',
+                        history: [
+                            { rodada: 1, error: false, data: { pontos: 55.4, pontos_campeonato: 55.4, patrimonio: 105.2, time: { nome: 'George FC', nome_cartola: 'George' } } },
+                            { rodada: 2, error: false, data: { pontos: 78.1, pontos_campeonato: 133.5, patrimonio: 112.0, time: { nome: 'George FC', nome_cartola: 'George' } } }
+                        ]
+                    },
+                    {
+                        id: 26331075, nomeOriginal: 'XINGU', escudoBase64: 'https://ui-avatars.com/api/?name=XI&background=2563eb&color=fff',
+                        history: [
+                            { rodada: 1, error: false, data: { pontos: 62.0, pontos_campeonato: 62.0, patrimonio: 108.5, time: { nome: 'Xingu Team', nome_cartola: 'Xingu' } } },
+                            { rodada: 2, error: false, data: { pontos: 45.3, pontos_campeonato: 107.3, patrimonio: 106.1, time: { nome: 'Xingu Team', nome_cartola: 'Xingu' } } }
+                        ]
+                    },
+                    {
+                        id: 20129034, nomeOriginal: 'LEO', escudoBase64: 'https://ui-avatars.com/api/?name=LE&background=16a34a&color=fff',
+                        history: [
+                            { rodada: 1, error: false, data: { pontos: 48.2, pontos_campeonato: 48.2, patrimonio: 102.0, time: { nome: 'Leo Boys', nome_cartola: 'Leo' } } },
+                            { rodada: 2, error: false, data: { pontos: 85.0, pontos_campeonato: 133.2, patrimonio: 115.8, time: { nome: 'Leo Boys', nome_cartola: 'Leo' } } }
+                        ]
+                    },
+                    {
+                        id: 27110420, nomeOriginal: 'PAULO', escudoBase64: 'https://ui-avatars.com/api/?name=PA&background=9333ea&color=fff',
+                        history: [
+                            { rodada: 1, error: false, data: { pontos: 35.0, pontos_campeonato: 35.0, patrimonio: 98.5, time: { nome: 'Paulo AC', nome_cartola: 'Paulo' } } },
+                            { rodada: 2, error: false, data: { pontos: 60.0, pontos_campeonato: 95.0, patrimonio: 101.2, time: { nome: 'Paulo AC', nome_cartola: 'Paulo' } } }
+                        ]
                     }
-                } catch (e) {
-                    console.warn('Falha no proxy de imagem:', proxy);
-                }
-            }
-            return 'https://via.placeholder.com/150'; // Fallback visual se os proxies bloquearem
+                ]
+            };
         }
 
-        // Função LÓGICA CORRIGIDA para buscar a rodada atual finalizada
-        async function fetchCurrentRound() {
-            const apiUrl = 'https://api.cartola.globo.com/mercado/status';
-            const proxies = [
-                `https://api.codetabs.com/v1/proxy?quest=${apiUrl}`,
-                `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`
-            ];
-
-            for (const proxyUrl of proxies) {
-                try {
-                    const response = await fetch(proxyUrl, { cache: "no-store" });
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data && data.rodada_atual) {
-                            let rodada = data.rodada_atual;
-                            
-                            // Correção de Lógica:
-                            // Status 1 = Aberto (Rodada ainda vai acontecer)
-                            // Status 2 = Fechado (Rodada está a decorrer neste momento)
-                            // Se o status for 1 ou 2, a rodada atual NÃO FINALIZOU.
-                            // Para garantir dados sólidos (e evitar repetições falsas de pontuação ou parciais),
-                            // queremos sempre ir até a última rodada concluída (rodada_atual - 1).
-                            if (data.status_mercado === 1 || data.status_mercado === 2) {
-                                rodada = rodada - 1;
-                            }
-                            
-                            return Math.max(1, rodada);
-                        }
-                    }
-                } catch (error) {}
-            }
-            return 6; // fallback
-        }
-
-        // Função para buscar dados de um jogador focando EXCLUSIVAMENTE na rodada específica
-        async function fetchCartolaData(id, rodada) {
-            // Removido o uso do endpoint genérico /time/id/${id}.
-            // O endpoint genérico traz a escalação do mercado aberto (futuro), o que misturava 
-            // a pontuação total antiga com um time vazio novo.
-            // Usando sempre /${rodada}, garantimos um "fotografia" exata de quando aquela rodada fechou.
-            const apiUrl = `https://api.cartola.globo.com/time/id/${id}/${rodada}`;
-            
-            const proxies = [
-                `https://api.codetabs.com/v1/proxy?quest=${apiUrl}`,
-                `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`,
-                `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`
-            ];
-
-            for (const proxyUrl of proxies) {
-                try {
-                    const response = await fetch(proxyUrl, { cache: "no-store" });
-                    if (response.ok) {
-                        const cartolaData = await response.json();
-                        if (cartolaData && cartolaData.time) {
-                            return cartolaData;
-                        }
-                    }
-                } catch (error) {}
-            }
-            throw new Error(`Falha na rodada ${rodada}.`);
-        }
-
-        // Busca o histórico completo de 1 até à última rodada finalizada
-        async function fetchPlayerHistory(jogador, rodadaAtual) {
-            const promises = [];
-            for (let r = 1; r <= rodadaAtual; r++) {
-                promises.push(fetchCartolaData(jogador.id, r));
-            }
-            
-            const resultados = await Promise.allSettled(promises);
-            
-            const history = resultados.map((res, index) => {
-                if (res.status === 'fulfilled') {
-                    return { rodada: index + 1, data: res.value, error: false };
-                } else {
-                    return { rodada: index + 1, data: null, error: true };
-                }
-            });
-
-            const sucessos = history.filter(h => !h.error);
-            if (sucessos.length === 0) {
-                throw new Error(`Não foi possível obter nenhuma rodada para ${jogador.nomeOriginal}`);
-            }
-
-            return { ...jogador, history };
-        }
-
-        // Função principal para buscar os dados de todos
+        // --- FETCH DA API OTIMIZADA DO GITHUB ---
         async function fetchData() {
             const loadingEl = document.getElementById('loading');
             const tabsEl = document.getElementById('tabs-container');
             const viewsEl = document.getElementById('views-container');
             const errorEl = document.getElementById('error-message');
             const errorTextEl = document.getElementById('error-text');
-            const loadingText = document.getElementById('loading-text');
+            const mockWarning = document.getElementById('mock-warning');
 
             loadingEl.classList.remove('hidden');
             tabsEl.classList.add('hidden');
@@ -417,30 +332,27 @@
             errorEl.classList.add('hidden');
 
             try {
-                loadingText.textContent = "Verificando última rodada finalizada no mercado...";
-                const ultimaRodadaFinalizada = await fetchCurrentRound();
+                let json;
                 
-                loadingText.textContent = `Baixando dados consolidados até à rodada ${ultimaRodadaFinalizada}...`;
-
-                const fetchPromises = jogadores.map(jogador => fetchPlayerHistory(jogador, ultimaRodadaFinalizada));
-                const resultados = await Promise.allSettled(fetchPromises);
-                
-                const sucessos = resultados.filter(r => r.status === 'fulfilled').map(r => r.value);
-                
-                if (sucessos.length === 0) {
-                    throw new Error("Não foi possível aceder à API do Cartola no momento devido a bloqueios de segurança (CORS). Tente novamente mais tarde.");
+                // Verifica se está num ambiente de Pré-visualização (Canvas ou Ficheiro local)
+                if (window.location.protocol.includes('blob') || window.location.protocol === 'data:' || window.location.protocol === 'file:') {
+                    console.log("Ambiente de preview detetado. A carregar dados mockados...");
+                    // Aguarda 1 segundinho para simular carregamento
+                    await new Promise(r => setTimeout(r, 1000));
+                    json = getMockData();
+                    mockWarning.classList.remove('hidden');
+                } else {
+                    // Busca o ficheiro JSON estático do GitHub Actions no ambiente real
+                    const response = await fetch('./data.json?v=' + new Date().getTime());
+                    
+                    if (!response.ok) {
+                        throw new Error("Dados ainda não processados no servidor. Verifique a aba 'Actions' no GitHub ou aguarde o robô finalizar.");
+                    }
+                    json = await response.json();
                 }
 
-                // Processo crítico: Fazer download das imagens como Base64 para garantir a partilha no WhatsApp
-                loadingText.textContent = `Carregando escudos dos times...`;
-                for (let player of sucessos) {
-                    const latest = player.history.filter(h => !h.error).pop()?.data;
-                    const rawEscudo = latest?.time?.url_escudo_png || 'https://via.placeholder.com/150';
-                    player.escudoBase64 = await fetchImageAsBase64(rawEscudo);
-                }
-                
-                appData = sucessos;
-                maxRound = ultimaRodadaFinalizada;
+                appData = json.appData;
+                maxRound = json.maxRound;
 
                 // Renderizar abas
                 renderRankingRodadaSelector();
@@ -455,7 +367,7 @@
                 lucide.createIcons();
 
             } catch (error) {
-                console.error("Erro fatal ao buscar dados:", error);
+                console.error("Erro fatal ao carregar os dados:", error);
                 errorTextEl.textContent = error.message;
                 loadingEl.classList.add('hidden');
                 errorEl.classList.remove('hidden');
@@ -700,7 +612,7 @@
                     ? `<i data-lucide="medal" class="w-6 h-6 mx-auto ${medalColors[index]}"></i>` 
                     : `<span class="font-bold text-gray-500 dark:text-gray-400 text-lg">${index + 1}º</span>`;
 
-                // Destaca visualmente a coluna que está sendo ordenada
+                // Destaca visualmente a coluna que está a ser ordenada
                 const isSortPontos = rankingSortConfig.column === 'pontos';
                 const pontosClass = isSortPontos ? 'text-blue-700 dark:text-blue-400 font-extrabold' : 'text-blue-500 dark:text-blue-300 font-semibold';
                 const patClass = !isSortPontos ? 'text-yellow-600 dark:text-yellow-400 font-extrabold' : 'text-yellow-500 dark:text-yellow-300 font-semibold';
