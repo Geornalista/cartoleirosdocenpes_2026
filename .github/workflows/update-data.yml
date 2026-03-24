@@ -1,93 +1,33 @@
-// Este script roda no servidor do GitHub Actions usando Node.js
-// Ele não sofre com bloqueios de CORS, o que o torna muito mais rápido e estável.
+name: Atualizar Dados Diariamente
 
-const fs = require('fs');
+on:
+  schedule:
+    # Corre todos os dias às 09:00 UTC (06:00 da manhã no horário de Brasília)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Permite correr o script manualmente através de um botão no GitHub
 
-// Seus jogadores
-const jogadores = [
-    { nomeOriginal: 'GEORGE', id: 26323967 },
-    { nomeOriginal: 'XINGU', id: 26331075 },
-    { nomeOriginal: 'LEO', id: 20129034 },
-    { nomeOriginal: 'PAULO', id: 27110420 },
-    { nomeOriginal: 'VITOR', id: 5214103 },
-    { nomeOriginal: 'RAFAEL', id: 22004383 }
-];
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permissão obrigatória para o robô poder guardar o data.json no teu repositório
 
-// Transforma os escudos em Base64 no próprio servidor para agilizar o compartilhamento depois
-async function fetchImageAsBase64(url) {
-    if (!url) return 'https://via.placeholder.com/150';
-    try {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        return `data:image/png;base64,${buffer.toString('base64')}`;
-    } catch (e) {
-        console.error('Erro ao baixar imagem:', e.message);
-        return 'https://via.placeholder.com/150';
-    }
-}
+    steps:
+      - name: Fazer Checkout do Repositório
+        uses: actions/checkout@v3
 
-async function run() {
-    console.log("-> Buscando status do mercado do Cartola...");
-    
-    // 1. Descobre a rodada atual finalizada
-    const statusRes = await fetch('https://api.cartola.globo.com/mercado/status');
-    const statusData = await statusRes.json();
-    
-    let rodadaAtual = statusData.rodada_atual;
-    if (statusData.status_mercado === 1 || statusData.status_mercado === 2) {
-        rodadaAtual = rodadaAtual - 1; // Só consolida rodadas já encerradas
-    }
-    rodadaAtual = Math.max(1, rodadaAtual);
-    console.log(`-> Última rodada finalizada identificada: ${rodadaAtual}`);
+      - name: Configurar Ambiente Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-    const appData = [];
+      - name: Correr Script de Busca do Cartola
+        run: node fetch-cartola.js
 
-    // 2. Busca o histórico de cada jogador
-    for (const jogador of jogadores) {
-        console.log(`   Baixando dados de ${jogador.nomeOriginal}...`);
-        const history = [];
-        
-        for (let r = 1; r <= rodadaAtual; r++) {
-            try {
-                const res = await fetch(`https://api.cartola.globo.com/time/id/${jogador.id}/${r}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    history.push({ rodada: r, data: data, error: false });
-                } else {
-                    history.push({ rodada: r, data: null, error: true });
-                }
-            } catch (e) {
-                history.push({ rodada: r, data: null, error: true });
-            }
-        }
-        
-        // Pega o escudo mais recente do histórico
-        const sucessos = history.filter(h => !h.error);
-        const latest = sucessos.length > 0 ? sucessos[sucessos.length - 1].data : null;
-        const rawEscudo = latest?.time?.url_escudo_png || 'https://via.placeholder.com/150';
-        
-        // Converte a imagem
-        const escudoBase64 = await fetchImageAsBase64(rawEscudo);
-
-        appData.push({
-            ...jogador,
-            history,
-            escudoBase64
-        });
-    }
-
-    // 3. Estrutura o JSON Final
-    const finalOutput = {
-        maxRound: rodadaAtual,
-        appData: appData,
-        lastUpdate: new Date().toISOString()
-    };
-
-    // 4. Salva o arquivo no disco (que depois o GitHub commitará)
-    fs.writeFileSync('data.json', JSON.stringify(finalOutput));
-    console.log("-> SUCESSO! Arquivo data.json gerado e pronto para uso.");
-}
-
-// Inicia o processo
-run();
+      - name: Guardar ficheiro (Commit & Push)
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git add data.json
+          # O comando abaixo faz commit APENAS se houver alguma diferença nova, evitando commits vazios
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Atualização diária de dados do Cartola [Automático]" && git push)
