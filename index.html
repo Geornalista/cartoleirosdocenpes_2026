@@ -475,8 +475,11 @@
             for (let r = 1; r <= maxRound; r++) {
                 const roundResults = [];
                 appData.forEach(player => {
-                    const roundData = player.history.find(h => h.rodada === r && !h.error)?.data;
-                    if (roundData && roundData.pontos !== undefined) {
+                    const roundEntry = player.history.find(h => h.rodada === r && !h.error);
+                    const roundData = roundEntry?.data;
+            
+                    // Ajuste: Só conta se a rodada no dado for IGUAL à rodada do loop
+                    if (roundData && roundData.pontos !== undefined && roundData.rodada === r) {
                         roundResults.push({ id: player.id, pontos: roundData.pontos });
                         premios[player.id].totalGasto += 5.00;
                     }
