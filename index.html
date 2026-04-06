@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Nossa Liga Cartola FC</title>
     
-    <!-- PWA Meta Tags -->
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#ea580c">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="icon-192x192.png">
 
-    <!-- Tailwind CSS para estilização rápida e moderna -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         // Configuração do Tailwind para Modo Escuro
@@ -28,9 +26,7 @@
         }
     </script>
 
-    <!-- Lucide Icons para os ícones -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    <!-- HTML2Canvas para gerar a imagem de partilha -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -72,7 +68,6 @@
 </head>
 <body class="min-h-screen pb-12 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200">
 
-    <!-- Header -->
     <header class="bg-orange-600 text-white shadow-md py-4 mb-6 relative">
         <div class="container mx-auto px-4 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -81,12 +76,10 @@
             </div>
             
             <div class="flex items-center gap-2">
-                <!-- Botão Tema Escuro/Claro -->
                 <button onclick="toggleTheme()" class="p-2 bg-orange-700/50 hover:bg-orange-700 rounded-full transition-colors" aria-label="Alternar Tema">
                     <i data-lucide="moon" class="w-5 h-5 text-white hidden dark:block"></i>
                     <i data-lucide="sun" class="w-5 h-5 text-white block dark:hidden"></i>
                 </button>
-                <!-- Botão Partilhar -->
                 <button id="share-btn" onclick="shareScreenshot()" class="p-2 bg-orange-700/50 hover:bg-orange-700 rounded-full transition-colors" aria-label="Partilhar no WhatsApp">
                     <i data-lucide="share-2" class="w-5 h-5 text-white"></i>
                 </button>
@@ -94,22 +87,18 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="container mx-auto px-4">
         
-        <!-- Área de Loading -->
         <div id="loading" class="py-20 text-center">
             <div class="loader mb-4"></div>
             <p id="loading-text" class="text-gray-600 dark:text-gray-400 font-medium animate-pulse">A carregar estatísticas atualizadas...</p>
         </div>
 
-        <!-- Mensagem de Aviso de Mock (Oculta por padrão) -->
         <div id="mock-warning" class="hidden bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-400 dark:border-yellow-800 text-yellow-800 dark:text-yellow-200 px-4 py-3 rounded relative max-w-4xl mx-auto mb-4 text-sm text-center" role="alert">
             <i data-lucide="info" class="w-4 h-4 inline-block mr-1 relative -top-0.5"></i>
             <strong>Modo de Pré-visualização:</strong> A exibir dados fictícios para demonstração.
         </div>
 
-        <!-- Navegação por Abas (Oculta por padrão até carregar) -->
         <div id="tabs-container" class="hidden mb-6 border-b border-gray-200 dark:border-gray-700">
             <nav class="flex overflow-x-auto tabs-scroll space-x-6 pb-2 px-2" aria-label="Tabs">
                 <button onclick="changeTab('rodada')" id="tab-rodada" class="tab-btn text-orange-600 dark:text-orange-500 border-orange-600 dark:border-orange-500 border-b-2 py-2 text-sm font-bold whitespace-nowrap transition-colors flex items-center gap-1">
@@ -124,32 +113,26 @@
             </nav>
         </div>
 
-        <!-- Conteúdo das Abas -->
         <div id="views-container" class="hidden">
             
-            <!-- Container Por Rodada (Aba Padrão) -->
             <div id="view-rodada" class="view-section max-w-4xl mx-auto pb-4">
                 <div class="mb-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
                     <label for="rodada-select" class="font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">Selecione a Rodada:</label>
                     <select id="rodada-select" onchange="renderRankingRodada(this.value)" class="bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block w-full sm:w-auto p-2.5 outline-none font-medium">
-                        <!-- Opções preenchidas via JS -->
-                    </select>
+                        </select>
                 </div>
                 <div id="ranking-rodada-container"></div>
             </div>
 
-            <!-- Container Premiação -->
             <div id="view-premiacao" class="view-section hidden max-w-4xl mx-auto pb-4">
                 <div id="ranking-premiacao-container"></div>
             </div>
 
-            <!-- Container Ranking Unificado -->
             <div id="view-ranking" class="view-section hidden max-w-4xl mx-auto pb-4">
                 <div id="ranking-geral-container"></div>
             </div>
         </div>
         
-        <!-- Mensagem de Erro (Oculta por padrão) -->
         <div id="error-message" class="hidden bg-red-100 dark:bg-red-900/30 border border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded relative max-w-2xl mx-auto mt-8 text-center" role="alert">
             <strong class="font-bold" id="error-title">Ops! </strong>
             <span class="block sm:inline" id="error-text">Ocorreu um erro ao carregar os dados.</span>
@@ -288,29 +271,29 @@
                     {
                         id: 26323967, nomeOriginal: 'GEORGE', escudoBase64: 'https://ui-avatars.com/api/?name=GE&background=ea580c&color=fff',
                         history: [
-                            { rodada: 1, error: false, data: { pontos: 55.4, pontos_campeonato: 55.4, patrimonio: 105.2, time: { nome: 'George FC', nome_cartola: 'George' } } },
-                            { rodada: 2, error: false, data: { pontos: 78.1, pontos_campeonato: 133.5, patrimonio: 112.0, time: { nome: 'George FC', nome_cartola: 'George' } } }
+                            { rodada: 1, error: false, data: { rodada: 1, pontos: 55.4, pontos_campeonato: 55.4, patrimonio: 105.2, time: { nome: 'George FC', nome_cartola: 'George' } } },
+                            { rodada: 2, error: false, data: { rodada: 2, pontos: 78.1, pontos_campeonato: 133.5, patrimonio: 112.0, time: { nome: 'George FC', nome_cartola: 'George' } } }
                         ]
                     },
                     {
                         id: 26331075, nomeOriginal: 'XINGU', escudoBase64: 'https://ui-avatars.com/api/?name=XI&background=2563eb&color=fff',
                         history: [
-                            { rodada: 1, error: false, data: { pontos: 62.0, pontos_campeonato: 62.0, patrimonio: 108.5, time: { nome: 'Xingu Team', nome_cartola: 'Xingu' } } },
-                            { rodada: 2, error: false, data: { pontos: 45.3, pontos_campeonato: 107.3, patrimonio: 106.1, time: { nome: 'Xingu Team', nome_cartola: 'Xingu' } } }
+                            { rodada: 1, error: false, data: { rodada: 1, pontos: 62.0, pontos_campeonato: 62.0, patrimonio: 108.5, time: { nome: 'Xingu Team', nome_cartola: 'Xingu' } } },
+                            { rodada: 2, error: false, data: { rodada: 2, pontos: 45.3, pontos_campeonato: 107.3, patrimonio: 106.1, time: { nome: 'Xingu Team', nome_cartola: 'Xingu' } } }
                         ]
                     },
                     {
                         id: 20129034, nomeOriginal: 'LEO', escudoBase64: 'https://ui-avatars.com/api/?name=LE&background=16a34a&color=fff',
                         history: [
-                            { rodada: 1, error: false, data: { pontos: 48.2, pontos_campeonato: 48.2, patrimonio: 102.0, time: { nome: 'Leo Boys', nome_cartola: 'Leo' } } },
-                            { rodada: 2, error: false, data: { pontos: 85.0, pontos_campeonato: 133.2, patrimonio: 115.8, time: { nome: 'Leo Boys', nome_cartola: 'Leo' } } }
+                            { rodada: 1, error: false, data: { rodada: 1, pontos: 48.2, pontos_campeonato: 48.2, patrimonio: 102.0, time: { nome: 'Leo Boys', nome_cartola: 'Leo' } } },
+                            { rodada: 2, error: false, data: { rodada: 2, pontos: 85.0, pontos_campeonato: 133.2, patrimonio: 115.8, time: { nome: 'Leo Boys', nome_cartola: 'Leo' } } }
                         ]
                     },
                     {
                         id: 27110420, nomeOriginal: 'PAULO', escudoBase64: 'https://ui-avatars.com/api/?name=PA&background=9333ea&color=fff',
                         history: [
-                            { rodada: 1, error: false, data: { pontos: 35.0, pontos_campeonato: 35.0, patrimonio: 98.5, time: { nome: 'Paulo AC', nome_cartola: 'Paulo' } } },
-                            { rodada: 2, error: false, data: { pontos: 60.0, pontos_campeonato: 95.0, patrimonio: 101.2, time: { nome: 'Paulo AC', nome_cartola: 'Paulo' } } }
+                            { rodada: 1, error: false, data: { rodada: 1, pontos: 35.0, pontos_campeonato: 35.0, patrimonio: 98.5, time: { nome: 'Paulo AC', nome_cartola: 'Paulo' } } },
+                            { rodada: 2, error: false, data: { rodada: 2, pontos: 60.0, pontos_campeonato: 95.0, patrimonio: 101.2, time: { nome: 'Paulo AC', nome_cartola: 'Paulo' } } }
                         ]
                     }
                 ]
@@ -477,7 +460,7 @@
                 appData.forEach(player => {
                     const roundEntry = player.history.find(h => h.rodada === r && !h.error);
                     const roundData = roundEntry?.data;
-            
+
                     // Ajuste: Só conta se a rodada no dado for IGUAL à rodada do loop
                     if (roundData && roundData.pontos !== undefined && roundData.rodada === r) {
                         roundResults.push({ id: player.id, pontos: roundData.pontos });
