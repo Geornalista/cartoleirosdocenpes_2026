@@ -33,15 +33,10 @@ async function run() {
         const statusRes = await fetch('https://api.cartola.globo.com/mercado/status');
         const statusData = await statusRes.json();
         
-        let rodadaAtual = statusData.rodada_atual;
-        
-        // CORREÇÃO 1: A rodada só é "oficial" para o seu ranking após o mercado abrir (1).
-        // Se estiver Fechado (2) ou em Manutenção/Atualizando (4), a rodada N ainda não terminou.
-        if (statusData.status_mercado !== 1) {
-            rodadaAtual = rodadaAtual - 1; 
-        }
-        
-        rodadaAtual = Math.max(1, rodadaAtual);
+        // CORREÇÃO DEFINITIVA PARA A DUPLICAÇÃO E PREMIAÇÃO ZERADA:
+        // A rodada do status (rodada_atual) é a rodada que vai começar, que está rolando ou em apuração.
+        // A última rodada com pontos 100% consolidados é SEMPRE a anterior.
+        let rodadaAtual = Math.max(1, statusData.rodada_atual - 1);
         console.log(`-> Última rodada validada para processamento: ${rodadaAtual}`);
 
         const appData = [];
@@ -56,16 +51,8 @@ async function run() {
                     const res = await fetch(`https://api.cartola.globo.com/time/id/${jogador.id}/${r}`);
                     if (res.ok) {
                         const data = await res.json();
-                        
-                        // CORREÇÃO 2: Validação de integridade. 
-                        // Se pedimos a rodada 'r', a API tem que responder a rodada 'r'.
-                        // Isso evita o bug de a Globo retornar a rodada 10 quando pedimos a 11 vazia.
-                        if (data.rodada === r) {
-                            history.push({ rodada: r, data: data, error: false });
-                        } else {
-                            console.warn(`      [Aviso] Rodada ${r} ignorada para ${jogador.nomeOriginal}: API retornou dados da rodada ${data.rodada}`);
-                            history.push({ rodada: r, data: null, error: true });
-                        }
+                        // Salva direto, confiando na iteração do loop 'r' e no limite do 'rodadaAtual'
+                        history.push({ rodada: r, data: data, error: false });
                     } else {
                         history.push({ rodada: r, data: null, error: true });
                     }
@@ -74,7 +61,7 @@ async function run() {
                 }
             }
             
-            // Pega o escudo mais recente do histórico válido
+            // Pega o escudo mais recente do histórico
             const sucessos = history.filter(h => !h.error);
             const latest = sucessos.length > 0 ? sucessos[sucessos.length - 1].data : null;
             const rawEscudo = latest?.time?.url_escudo_png || 'https://via.placeholder.com/150';
@@ -94,11 +81,11 @@ async function run() {
 
         // 4. Salva o arquivo no disco do servidor do GitHub
         fs.writeFileSync('data.json', JSON.stringify(finalOutput));
-        console.log("-> SUCESSO! Arquivo data.json limpo e gerado com sucesso.");
+        console.log("-> SUCESSO! Arquivo data.json gerado com sucesso.");
 
     } catch (error) {
         console.error("-> ERRO FATAL no processo:", error);
-        process.exit(1); // Força a action a falhar caso dê erro grave
+        process.exit(1); 
     }
 }
 
