@@ -187,6 +187,9 @@
         let appData = [];
         let maxRound = 1;
 
+        // Controla qual turno está sendo exibido na aba Premiação
+        let premiacaoTurnoAtual = 1;
+
         // Estado da ordenação da aba Ranking
         let rankingSortConfig = {
             column: 'pontos', // 'pontos' ou 'patrimonio'
@@ -356,7 +359,11 @@
 
                 // Renderizar abas
                 renderRankingRodadaSelector();
-                renderRankingPremiacao();
+
+                // Se já estivermos no segundo turno, abre automaticamente nele
+                premiacaoTurnoAtual = maxRound >= 20 ? 2 : 1;
+                renderRankingPremiacao(premiacaoTurnoAtual);
+
                 renderRanking();
 
                 // Atualizar UI
@@ -456,10 +463,48 @@
             lucide.createIcons();
         }
 
-        // --- ABA: PREMIAÇÃO ---
-        function renderRankingPremiacao() {
+        // --- ABA: PREMIAÇÃO POR TURNO ---
+        function renderRankingPremiacao(turno = premiacaoTurnoAtual) {
+            premiacaoTurnoAtual = turno;
+
+            // Define o intervalo de rodadas do turno
+            let rodadaInicial;
+            let rodadaFinal;
+            let tituloTurno;
+            let descricaoTurno;
+            let turnoFinalizado = false;
+
+            if (turno === 1) {
+                rodadaInicial = 1;
+                rodadaFinal = Math.min(19, maxRound);
+                tituloTurno = '1º Turno';
+                descricaoTurno = 'Rodadas 1 a 19';
+                turnoFinalizado = maxRound >= 19;
+            } else {
+                rodadaInicial = 20;
+                rodadaFinal = maxRound;
+                tituloTurno = '2º Turno';
+                descricaoTurno = maxRound >= 20
+                    ? `Rodadas 20 a ${maxRound}`
+                    : 'Rodadas 20 a 38';
+            }
+
+            // Inicializa estrutura dos participantes
             const premios = {};
+
             appData.forEach(player => {
+                // Para o 1º turno, usa como referência o último dado disponível até a rodada 19.
+                // Para o 2º turno, usa o dado mais recente disponível.
+                const historicoDoTurno = player.history.filter(
+                    h => !h.error && h.rodada >= rodadaInicial && h.rodada <= rodadaFinal
+                );
+
+                const historicoValido = player.history.filter(h => !h.error);
+
+                const latest = historicoDoTurno.length > 0
+                    ? historicoDoTurno[historicoDoTurno.length - 1].data
+                    : historicoValido[historicoValido.length - 1]?.data;
+
                 premios[player.id] = {
                     nomeOriginal: player.nomeOriginal,
                     id: player.id,
@@ -467,36 +512,52 @@
                     totalGasto: 0,
                     vitorias: 0,
                     segundos: 0,
-                    latestData: player.history.filter(h => !h.error).pop()?.data,
+                    latestData: latest,
                     escudoBase64: player.escudoBase64
                 };
             });
 
-            for (let r = 1; r <= maxRound; r++) {
-                const roundResults = [];
-                appData.forEach(player => {
-                    const roundData = player.history.find(h => h.rodada === r && !h.error)?.data;
-                    if (roundData && roundData.pontos !== undefined) {
-                        roundResults.push({ id: player.id, pontos: roundData.pontos });
-                        premios[player.id].totalGasto += 5.00;
+            // Calcula a premiação apenas das rodadas do turno selecionado
+            if (rodadaInicial <= rodadaFinal) {
+                for (let r = rodadaInicial; r <= rodadaFinal; r++) {
+                    const roundResults = [];
+
+                    appData.forEach(player => {
+                        const roundData = player.history.find(
+                            h => h.rodada === r && !h.error
+                        )?.data;
+
+                        if (roundData && roundData.pontos !== undefined) {
+                            roundResults.push({
+                                id: player.id,
+                                pontos: roundData.pontos
+                            });
+
+                            // Cada jogador investe R$ 5,00 por rodada
+                            premios[player.id].totalGasto += 5.00;
+                        }
+                    });
+
+                    roundResults.sort((a, b) => b.pontos - a.pontos);
+
+                    // 1º lugar
+                    if (roundResults.length > 0) {
+                        premios[roundResults[0].id].totalGanho += 24.00;
+                        premios[roundResults[0].id].vitorias += 1;
                     }
-                });
 
-                roundResults.sort((a, b) => b.pontos - a.pontos);
-
-                if (roundResults.length > 0) {
-                    premios[roundResults[0].id].totalGanho += 24.00;
-                    premios[roundResults[0].id].vitorias += 1;
-                }
-                if (roundResults.length > 1) {
-                    premios[roundResults[1].id].totalGanho += 6.00;
-                    premios[roundResults[1].id].segundos += 1;
+                    // 2º lugar
+                    if (roundResults.length > 1) {
+                        premios[roundResults[1].id].totalGanho += 6.00;
+                        premios[roundResults[1].id].segundos += 1;
+                    }
                 }
             }
 
+            // Prepara o ranking
             const mapped = Object.values(premios).map(p => {
                 const saldoLiquido = p.totalGanho - p.totalGasto;
-                
+
                 return {
                     nomeTime: p.latestData?.time?.nome || 'Desconhecido',
                     nomeCartola: p.latestData?.time?.nome_cartola || p.nomeOriginal,
@@ -508,13 +569,15 @@
                 };
             }).sort((a, b) => b.saldo - a.saldo);
 
-            let rows = mapped.map((item, index) => {
+            // Monta as linhas da tabela
+            const rows = mapped.map((item, index) => {
                 const isMedal = index < 3;
                 const medalColors = ['text-yellow-500', 'text-gray-400', 'text-amber-600'];
-                const rankDisplay = isMedal 
-                    ? `<i data-lucide="medal" class="w-6 h-6 mx-auto ${medalColors[index]}"></i>` 
+
+                const rankDisplay = isMedal
+                    ? `<i data-lucide="medal" class="w-6 h-6 mx-auto ${medalColors[index]}"></i>`
                     : `<span class="font-bold text-gray-500 dark:text-gray-400 text-lg">${index + 1}º</span>`;
-                
+
                 let saldoColor = 'text-gray-600 dark:text-gray-400';
                 if (item.saldo > 0) saldoColor = 'text-green-600 dark:text-green-400';
                 if (item.saldo < 0) saldoColor = 'text-red-500 dark:text-red-400';
@@ -527,7 +590,8 @@
                             <div>
                                 <div class="font-bold text-gray-800 dark:text-gray-100 text-xs sm:text-base leading-tight break-words">${item.nomeTime}</div>
                                 <div class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 mt-0.5 break-words">
-                                    ${item.nomeCartola} <span class="text-amber-600 dark:text-amber-500 font-medium ml-1 block sm:inline">(${item.detalhes})</span>
+                                    ${item.nomeCartola}
+                                    <span class="text-amber-600 dark:text-amber-500 font-medium ml-1 block sm:inline">(${item.detalhes})</span>
                                 </div>
                             </div>
                         </td>
@@ -543,11 +607,73 @@
                     </tr>
                 `;
             }).join('');
-            
+
+            // Estado visual dos botões
+            const btnTurno1Class = turno === 1
+                ? 'bg-orange-600 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+
+            const btnTurno2Class = turno === 2
+                ? 'bg-orange-600 text-white shadow-sm'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600';
+
+            // Status do turno
+            let statusTurno = '';
+
+            if (turno === 1 && turnoFinalizado) {
+                statusTurno = `
+                    <span class="inline-flex items-center gap-1 text-xs font-bold text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 px-2 py-1 rounded-full">
+                        ✓ Turno Finalizado
+                    </span>
+                `;
+            } else if (turno === 2 && maxRound >= 20) {
+                statusTurno = `
+                    <span class="inline-flex items-center gap-1 text-xs font-bold text-blue-700 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-2 py-1 rounded-full">
+                        Em andamento
+                    </span>
+                `;
+            }
+
+            // Renderiza interface
             document.getElementById('ranking-premiacao-container').innerHTML = `
-                <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 p-3 sm:p-4 rounded-xl mb-4 text-xs sm:text-sm text-center shadow-sm">
-                    <p><strong>Regras:</strong> Fundo de R$ 30,00 por rodada (Custo R$ 5,00/jogador). <br class="hidden sm:block"> 🥇 1º: R$ 24,00 | 🥈 2º: R$ 6,00</p>
+                <!-- Seletor de Turnos -->
+                <div class="flex justify-center mb-5">
+                    <div class="inline-flex bg-white dark:bg-gray-800 p-1 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 gap-1">
+                        <button
+                            onclick="renderRankingPremiacao(1)"
+                            class="px-4 sm:px-6 py-2 rounded-lg text-sm font-bold transition-all ${btnTurno1Class}">
+                            🏆 1º Turno
+                        </button>
+
+                        <button
+                            onclick="renderRankingPremiacao(2)"
+                            class="px-4 sm:px-6 py-2 rounded-lg text-sm font-bold transition-all ${btnTurno2Class} ${maxRound < 20 ? 'opacity-50 cursor-not-allowed' : ''}"
+                            ${maxRound < 20 ? 'disabled' : ''}>
+                            🏆 2º Turno
+                        </button>
+                    </div>
                 </div>
+
+                <!-- Cabeçalho do Turno -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 text-center">
+                    <div class="flex flex-col sm:flex-row items-center justify-center gap-2">
+                        <h2 class="text-lg sm:text-xl font-bold text-gray-800 dark:text-gray-100">${tituloTurno}</h2>
+                        ${statusTurno}
+                    </div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">${descricaoTurno}</p>
+                </div>
+
+                <!-- Regras -->
+                <div class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-800 text-green-800 dark:text-green-200 p-3 sm:p-4 rounded-xl mb-4 text-xs sm:text-sm text-center shadow-sm">
+                    <p>
+                        <strong>Regras por rodada:</strong>
+                        Fundo de R$ 30,00 (R$ 5,00 por jogador).
+                        <br class="hidden sm:block">
+                        🥇 1º: R$ 24,00 | 🥈 2º: R$ 6,00
+                    </p>
+                </div>
+
+                <!-- Tabela -->
                 <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-100 dark:border-gray-700">
                     <table class="w-full text-sm text-left table-auto">
                         <thead class="bg-gray-50 dark:bg-gray-900/50 text-gray-600 dark:text-gray-400 uppercase text-[10px] sm:text-xs border-b border-gray-200 dark:border-gray-700">
@@ -555,7 +681,7 @@
                                 <th class="py-3 px-2 sm:px-4 w-10 sm:w-16 text-center font-bold">Pos</th>
                                 <th class="py-3 px-2 sm:px-4 font-bold">Time</th>
                                 <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Investido</th>
-                                <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Prémios</th>
+                                <th class="py-3 px-2 sm:px-4 text-center font-bold hidden md:table-cell">Prêmios</th>
                                 <th class="py-3 px-2 sm:px-4 text-right font-bold">Saldo</th>
                             </tr>
                         </thead>
@@ -563,6 +689,8 @@
                     </table>
                 </div>
             `;
+
+            lucide.createIcons();
         }
 
         // --- ABA: RANKING UNIFICADO (Ordenável) ---
